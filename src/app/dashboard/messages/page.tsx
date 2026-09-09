@@ -20,6 +20,17 @@ export default async function MessagesPage() {
     .eq("receiver_id", user.id)
     .order("created_at", { ascending: false });
 
+  type MessageRow = {
+    id: string;
+    name: string;
+    phone: string | null;
+    message: string;
+    created_at: string;
+    houses: { title: string } | { title: string }[] | null;
+  };
+
+  const typedMessages = (messages ?? []) as unknown as MessageRow[];
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <h1 className="text-3xl font-black text-zinc-900">Messages reçus</h1>
@@ -33,7 +44,11 @@ export default async function MessagesPage() {
         </div>
       ) : (
         <div className="mt-8 space-y-4">
-          {messages.map((m) => (
+          {typedMessages.map((m) => {
+            // Supabase renvoie houses soit comme objet, soit comme tableau
+            const house = Array.isArray(m.houses) ? m.houses[0] : m.houses;
+            const houseTitle = house?.title;
+            return (
             <div key={m.id} className="rounded-2xl border border-zinc-200 bg-white p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -52,13 +67,14 @@ export default async function MessagesPage() {
               <p className="mt-3 rounded-lg bg-zinc-50 p-3 text-sm text-zinc-700">
                 {m.message}
               </p>
-              {m.houses?.title && (
+              {houseTitle && (
                 <p className="mt-2 text-xs text-zinc-500">
-                  À propos de : <strong>{m.houses.title}</strong>
+                  À propos de : <strong>{houseTitle}</strong>
                 </p>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

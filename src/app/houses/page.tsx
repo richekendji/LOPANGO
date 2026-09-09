@@ -78,10 +78,12 @@ export default async function HousesPage() {
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {houses.map((house) => {
-            const photos: { url: string }[] = Array.isArray(house.house_photos)
-              ? house.house_photos
+            const photos: { url: string; position: number | null }[] = Array.isArray(
+              house.house_photos,
+            )
+              ? (house.house_photos as { url: string; position: number | null }[])
               : [];
-            photos.sort((a, b) => a.position - b.position);
+            photos.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
             const cover = photos[0]?.url;
 
             return (

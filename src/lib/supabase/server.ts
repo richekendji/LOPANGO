@@ -14,7 +14,9 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookieStore.setAll(cookiesToSet);
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
           } catch {
             // Appelé depuis un Server Component : ne pas bloquer le rendu
           }
