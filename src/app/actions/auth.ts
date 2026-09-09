@@ -1,47 +1,114 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  generateIdentifier,
+  generatePassword,
+  identifierToEmail,
+  normalizeIdentifier,
+} from "@/lib/credentials";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export async function signUp(formData: FormData) {
-  const email = String(formData.get("email") ?? "");
-  const password = String(formData.get("password") ?? "");
-  const fullName = String(formData.get("fullName") ?? "");
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
   const role = String(formData.get("role") ?? "tenant");
 
-  if (!email || !password || !fullName) {
+  if (!firstName || !lastName) {
     redirect("/register?error=missing-fields");
   }
 
-  const supabase = await createClient();
+  // Identifiants générés automatiquement (affichés à l'utilisateur après création)
+  const identifier = generateIdentifier(firstName, lastName);
+  const password = generatePassword();
+  const email = identifierToEmail(identifier);
 
-  const { error } = await supabase.auth.signUp({
+  // La clé admin est requise pour créer des comptes sans email de confirmation
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    redirect(
+      "/register?error=" +
+        encodeURIComponent(
+          "Configuration incomplète : la clé SUPABASE_SERVICE_ROLE_KEY manque dans .env.local. Ajoutez-la puis redémarrez le serveur.",
+        ),
+    );
+  }
+
+  // Création du compte via le client ADMIN : pas d'email de confirmation,
+  // l'utilisateur est directement connecté après l'inscription.
+  const admin = await createAdminClient();
+  const { data, error } = await admin.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: {
-        full_name: fullName,
-        role,
-      },
+    email_confirm: true,
+    user_metadata: {
+      full_name: `${firstName} ${lastName}`,
+      first_name: firstName,
+      last_name: lastName,
+      role,
     },
   });
 
-  if (error) {
-    redirect(`/register?error=${encodeURIComponent(error.message)}`);
+  if (error || !data.user) {
+    redirect(
+      `/register?error=${encodeURIComponent(
+        error?.message ?? "Création du compte impossible.",
+      )}`,
+    );
+  }
+
+  // Ligne "profiles" : le trigger Supabase en crée déjà une à l'inscription,
+  // on met simplement à jour les champs métier.
+  await admin
+    .from("profiles")
+    .update({
+      full_name: `${firstName} ${lastName}`,
+      role,
+      username: identifier,
+    })
+    .eq("id", data.user.id);
+
+  // Connexion immédiate avec le client "classique" (cookies de session)
+  const supabase = await createClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (signInError) {
+    // Le compte existe : on demande à l'utilisateur de se connecter manuellement
+    redirect(`/login?identifier=${encodeURIComponent(identifier)}`);
   }
 
   revalidatePath("/", "layout");
-  redirect("/login?registered=1");
+
+  // Cookie temporaire (httpOnly) pour afficher les identifiants une seule fois
+  const cookieStore = await cookies();
+  cookieStore.set("lopango_new_credentials", JSON.stringify({ identifier, password }), {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 300, // 5 minutes
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  redirect("/register/success");
 }
 
 export async function signIn(formData: FormData) {
-  const email = String(formData.get("email") ?? "");
+  const identifier = normalizeIdentifier(
+    String(formData.get("identifier") ?? ""),
+  );
   const password = String(formData.get("password") ?? "");
 
-  if (!email || !password) {
+  if (!identifier || !password) {
     redirect("/login?error=missing-fields");
   }
+
+  // L'identifiant correspond à un email technique caché
+  const email = identifierToEmail(identifier);
 
   const supabase = await createClient();
 
@@ -63,6 +130,13 @@ export async function signOut() {
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/");
+}
+
+/** Supprime le cookie des identifiants affichés une seule fois. */
+export async function clearNewCredentials() {
+  const cookieStore = await cookies();
+  cookieStore.delete("lopango_new_credentials");
+  redirect("/dashboard");
 }
 
 export async function updateProfile(formData: FormData) {

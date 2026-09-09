@@ -20,10 +20,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="fr" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
         <Navbar />
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-zinc-200 py-6 text-center text-sm text-zinc-500">
+        <footer className="border-t border-zinc-200 py-6 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
           LOPANGO — Location de maisons au Congo-Brazzaville
         </footer>
       </body>

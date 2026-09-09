@@ -17,6 +17,14 @@
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+
+  /* Les champs de saisie restent clairs et lisibles en mode sombre */
+  input,
+  textarea,
+  select {
+    background-color: #ffffff;
+    color: #18181b;
+  }
 }
 
 body {
