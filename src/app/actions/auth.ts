@@ -8,6 +8,7 @@ import {
   identifierToEmail,
   normalizeIdentifier,
 } from "@/lib/credentials";
+import { SUBSCRIPTION_DURATION_DAYS } from "@/lib/pricing";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -69,6 +70,23 @@ export async function signUp(formData: FormData) {
       username: identifier,
     })
     .eq("id", data.user.id);
+
+  // ── MODE DÉMO (temporaire) ─────────────────────────────────────────
+  // L'étape de paiement est désactivée : l'abonnement du rôle choisi est
+  // créé directement "actif" pour 30 jours, sans passer par SebPay.
+  // À retirer lorsque le paiement sera réactivé.
+  const now = new Date();
+  const expires = new Date(now.getTime() + SUBSCRIPTION_DURATION_DAYS * 24 * 60 * 60 * 1000);
+  await admin.from("subscriptions").insert({
+    user_id: data.user.id,
+    role,
+    amount: 0,
+    status: "active",
+    payment_method: "demo",
+    transaction_id: `demo_${data.user.id.slice(0, 8)}`,
+    expires_at: expires.toISOString(),
+  });
+  // ────────────────────────────────────────────────────────────────────
 
   // Connexion immédiate avec le client "classique" (cookies de session)
   const supabase = await createClient();

@@ -49,13 +49,13 @@ export default async function MessagesPage() {
             const house = Array.isArray(m.houses) ? m.houses[0] : m.houses;
             const houseTitle = house?.title;
             return (
-            <div key={m.id} className="rounded-2xl border border-zinc-200 bg-white p-5">
-              <div className="flex items-start justify-between gap-4">
+            <div key={m.id} className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div>
                   <p className="font-semibold text-zinc-900">{m.name}</p>
                   <p className="text-sm text-zinc-500">{m.phone}</p>
                 </div>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-400 sm:shrink-0">
                   {new Date(m.created_at).toLocaleDateString("fr-FR", {
                     day: "numeric",
                     month: "short",

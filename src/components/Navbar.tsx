@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions/auth";
+import MobileNav from "@/components/MobileNav";
 
 export default async function Navbar() {
   const supabase = await createClient();
@@ -10,12 +11,13 @@ export default async function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <div className="relative mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link href="/" className="text-xl font-black tracking-tight text-zinc-900 dark:text-white">
           LOPANGO
         </Link>
 
-        <nav className="flex items-center gap-2 text-sm font-medium">
+        {/* Desktop : liens horizontaux */}
+        <nav className="hidden items-center gap-2 text-sm font-medium md:flex">
           <Link href="/" className="rounded-md px-3 py-2 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white">
             Accueil
           </Link>
@@ -48,6 +50,9 @@ export default async function Navbar() {
             </>
           )}
         </nav>
+
+        {/* Mobile : menu burger */}
+        <MobileNav isAuthenticated={!!user} />
       </div>
     </header>
   );

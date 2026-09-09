@@ -30,7 +30,7 @@ export default async function RegisterPage({
       )}
 
       <form action={signUp} className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm font-medium text-zinc-700 dark:text-zinc-200">
             Prénom
             <input
@@ -58,19 +58,19 @@ export default async function RegisterPage({
           <legend className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
             Vous êtes ?
           </legend>
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-100">
-            <input type="radio" name="role" value="tenant" defaultChecked />
-            Un locataire — je cherche une maison (9 999 FCFA/mois)
+          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-zinc-300 px-3 py-3 text-sm text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-100">
+            <input type="radio" name="role" value="tenant" defaultChecked className="mt-0.5" />
+            <span>Un locataire — je cherche une maison (9 999 FCFA/mois)</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-100">
-            <input type="radio" name="role" value="owner" />
-            Un propriétaire — je veux louer ma maison (12 999 FCFA/mois)
+          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-zinc-300 px-3 py-3 text-sm text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-100">
+            <input type="radio" name="role" value="owner" className="mt-0.5" />
+            <span>Un propriétaire — je veux louer ma maison (12 999 FCFA/mois)</span>
           </label>
         </fieldset>
 
         <button
           type="submit"
-          className="rounded-xl bg-emerald-600 px-6 py-3 text-base font-semibold text-white hover:bg-emerald-500"
+          className="rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white hover:bg-emerald-500"
         >
           Créer mon compte en un clic
         </button>

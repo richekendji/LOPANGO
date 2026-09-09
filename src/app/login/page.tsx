@@ -63,7 +63,7 @@ export default async function LoginPage({
 
         <button
           type="submit"
-          className="rounded-xl bg-emerald-600 px-6 py-3 text-base font-semibold text-white hover:bg-emerald-500"
+          className="rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white hover:bg-emerald-500"
         >
           Se connecter
         </button>

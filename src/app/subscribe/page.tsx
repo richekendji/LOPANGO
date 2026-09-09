@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SUBSCRIPTION_PRICES } from "@/lib/pricing";
-import { createSubscription } from "@/app/actions/subscription";
 
 export const dynamic = "force-dynamic";
 
@@ -31,80 +30,42 @@ export default async function SubscribePage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-black text-zinc-900">
+      <h1 className="text-3xl font-black text-zinc-900 sm:text-4xl">
         Abonnement {labels.title}
       </h1>
       <p className="mt-2 text-zinc-600">{labels.subtitle}</p>
 
-      {params.error && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {params.error}
-        </div>
-      )}
-
-      <div className="mt-6 rounded-2xl border-2 border-emerald-500 bg-white p-8">
+      <div className="mt-6 rounded-2xl border-2 border-amber-400 bg-amber-50 p-6 sm:p-8">
         <div className="text-center">
-          <p className="text-sm uppercase tracking-wide text-zinc-500">
-            Payable en Mobile Money
+          <span className="inline-block rounded-full bg-amber-200 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">
+            Mode démo — paiement désactivé
+          </span>
+          <p className="mt-4 text-zinc-700">
+            L&apos;abonnement <strong>{labels.title}</strong> est{" "}
+            <strong>activé automatiquement</strong> pendant la phase de
+            démonstration. Aucun paiement n&apos;est demandé.
           </p>
-          <p className="mt-2 text-5xl font-black text-zinc-900">
-            {price.toLocaleString("fr-FR")}
-            <span className="text-xl font-bold text-zinc-500"> FCFA</span>
+          <p className="mt-2 text-sm text-zinc-500">
+            Prix normal : {price.toLocaleString("fr-FR")} FCFA / 30 jours
+            (réactivé plus tard).
           </p>
-          <p className="mt-1 text-sm text-zinc-500">/ 30 jours</p>
         </div>
 
-        <div className="mt-6">
-          <p className="text-sm font-medium text-zinc-700">
-            Choisissez votre moyen de paiement :
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-zinc-300 px-4 py-3 font-semibold text-zinc-700">
-              <input type="radio" name="method" value="MTN" defaultChecked />
-              MTN MoMo
-            </label>
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-zinc-300 px-4 py-3 font-semibold text-zinc-700">
-              <input type="radio" name="method" value="AIRTEL" />
-              Airtel Money
-            </label>
-          </div>
-        </div>
-
-        <p className="mt-5 text-sm text-zinc-600">
-          Après validation, vous recevrez une notification sur votre téléphone
-          pour confirmer le paiement.
-        </p>
-
-        <form action={createSubscription} className="mt-6">
-          <input type="hidden" name="role" value={role} />
-          <label className="flex flex-col gap-1 text-sm font-medium text-zinc-700">
-            Numéro Mobile Money
-            <input
-              name="phone"
-              type="tel"
-              required
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-lg focus:border-emerald-500 focus:outline-none"
-              placeholder="+242 06 000 00 00"
-            />
-          </label>
-          <button
-            type="submit"
-            className="mt-4 w-full rounded-xl bg-emerald-600 px-6 py-3 text-lg font-bold text-white hover:bg-emerald-500"
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Link
+            href="/dashboard"
+            className="rounded-xl bg-emerald-600 px-6 py-3.5 text-center font-semibold text-white hover:bg-emerald-500"
           >
-            Payer {price.toLocaleString("fr-FR")} FCFA
-          </button>
-        </form>
-
-        <p className="mt-4 text-center text-xs text-zinc-400">
-          Paiement sécurisé. En cas de problème, contactez le support LOPANGO.
-        </p>
+            Accéder à mon espace
+          </Link>
+          <Link
+            href="/houses"
+            className="rounded-xl border border-zinc-300 bg-white px-6 py-3.5 text-center font-semibold text-zinc-700 hover:bg-zinc-50"
+          >
+            Voir les maisons
+          </Link>
+        </div>
       </div>
-
-      <p className="mt-8 text-center text-sm text-zinc-600">
-        <Link href="/dashboard" className="font-medium hover:text-zinc-900">
-          ← Retour à mon espace
-        </Link>
-      </p>
     </div>
   );
 }

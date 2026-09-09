@@ -50,7 +50,7 @@ export default async function HouseDetailPage({
       <div className="grid gap-4 sm:grid-cols-2">
         {photos.length > 0 ? (
           photos.map((p: { url: string }) => (
-            <div key={p.url} className="relative h-64 w-full overflow-hidden rounded-2xl">
+            <div key={p.url} className="relative h-52 w-full overflow-hidden rounded-2xl sm:h-64">
               <Image
                 src={p.url}
                 alt={house.title}
@@ -67,10 +67,10 @@ export default async function HouseDetailPage({
         )}
       </div>
 
-      <div className="mt-8 grid gap-8 md:grid-cols-3">
+      <div className="mt-6 grid gap-8 sm:mt-8 md:grid-cols-3">
         {/* Détails */}
         <div className="md:col-span-2">
-          <h1 className="text-3xl font-black text-zinc-900">{house.title}</h1>
+          <h1 className="text-2xl font-black text-zinc-900 sm:text-3xl">{house.title}</h1>
           <p className="mt-2 text-lg font-bold text-emerald-600">
             {house.price.toLocaleString("fr-FR")} {CURRENCY}
             <span className="text-sm font-normal text-zinc-500">/mois</span>
