@@ -112,7 +112,7 @@ export async function signUp(formData: FormData) {
     secure: process.env.NODE_ENV === "production",
   });
 
-  redirect("/register/success");
+  redirect("/app");
 }
 
 export async function signIn(formData: FormData) {
@@ -140,7 +140,7 @@ export async function signIn(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect("/app");
 }
 
 export async function signOut() {

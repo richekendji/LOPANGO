@@ -41,7 +41,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-      <h1 className="text-2xl font-black text-zinc-900 sm:text-3xl">
+      <Link
+        href="/app"
+        className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:text-emerald-500"
+      >
+        ← Retour à l&apos;app
+      </Link>
+      <h1 className="mt-3 text-2xl font-black text-zinc-900 sm:text-3xl">
         Bonjour, {profile?.full_name || user.email} 👋
       </h1>
 
