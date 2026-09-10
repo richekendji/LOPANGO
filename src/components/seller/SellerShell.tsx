@@ -1,0 +1,140 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { Icon } from "@/components/Icon";
+import { InstantTabLink, useInstantNav } from "@/components/InstantNav";
+import { hasActiveSubscription, subscribeStore } from "@/lib/mock/store";
+
+const PUBLISH_FORM = "/dashboard/houses/new";
+const PUBLISH_PAY =
+  "/paiement?contexte=publier&retour=" + encodeURIComponent(PUBLISH_FORM);
+
+const TABS = [
+  { href: "/app", label: "Accueil", icon: "home" as const },
+  { href: "/dashboard/houses", label: "Annonces", icon: "building" as const },
+  {
+    href: PUBLISH_FORM,
+    label: "Publier",
+    icon: "publish" as const,
+    publish: true as const,
+  },
+  { href: "/app/inbox", label: "Messages", icon: "inbox" as const },
+  { href: "/app/profile", label: "Profil", icon: "user" as const },
+];
+
+function BottomNav() {
+  const [subscribed, setSubscribed] = useState(false);
+
+  useEffect(() => {
+    const refresh = () => setSubscribed(hasActiveSubscription());
+    refresh();
+    return subscribeStore(refresh);
+  }, []);
+
+  const prefetchHrefs = useMemo(
+    () => [
+      "/app",
+      "/dashboard/houses",
+      "/app/inbox",
+      "/app/profile",
+      PUBLISH_FORM,
+      "/paiement",
+      subscribed ? PUBLISH_FORM : PUBLISH_PAY,
+    ],
+    [subscribed],
+  );
+
+  const { arm, isHot, pathname } = useInstantNav(prefetchHrefs);
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#ebebeb] bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1.5">
+        {TABS.map((tab) => {
+          const href =
+            "publish" in tab && tab.publish
+              ? subscribed
+                ? PUBLISH_FORM
+                : PUBLISH_PAY
+              : tab.href;
+          const pathActive =
+            tab.href === "/dashboard/houses"
+              ? pathname.startsWith("/dashboard/houses") &&
+                !pathname.includes("/new")
+              : "publish" in tab && tab.publish
+                ? pathname.includes("/new") ||
+                  pathname.includes("/edit") ||
+                  pathname.startsWith("/paiement")
+                : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+          const active = isHot(tab.label, pathActive);
+          return (
+            <InstantTabLink
+              key={tab.label}
+              href={href}
+              tabKey={tab.label}
+              active={active}
+              onArm={arm}
+              className={`flex min-w-[3.5rem] flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 text-[10px] font-medium ${
+                active ? "text-zinc-900" : "text-zinc-400"
+              }`}
+            >
+              <Icon name={tab.icon} className="h-5 w-5" />
+              <span>{tab.label}</span>
+            </InstantTabLink>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+export function SellerShell({
+  children,
+  title,
+  backHref,
+}: {
+  children: React.ReactNode;
+  title?: string;
+  backHref?: string;
+}) {
+  return (
+    <div className="min-h-screen bg-[#f5f5f5] text-zinc-900">
+      <header className="sticky top-0 z-40 border-b border-[#ebebeb]/80 bg-[#f5f5f5]/95 px-4 py-3 backdrop-blur">
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
+          {backHref ? (
+            <Link
+              href={backHref}
+              prefetch
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-semibold shadow-sm active:opacity-70"
+            >
+              ←
+            </Link>
+          ) : (
+            <Link
+              href="/app"
+              prefetch
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-sm font-black text-white active:opacity-70"
+            >
+              L
+            </Link>
+          )}
+          <div className="min-w-0 flex-1 text-center">
+            <p className="truncate text-[15px] font-bold">
+              {title ?? "LOPANGO"}
+            </p>
+          </div>
+          <Link
+            href="/app"
+            prefetch
+            aria-label="Accueil"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm active:opacity-70"
+          >
+            <Icon name="home" className="h-4 w-4" />
+          </Link>
+        </div>
+      </header>
+      <div className="mx-auto max-w-lg px-4 pb-28 pt-4">{children}</div>
+      <BottomNav />
+    </div>
+  );
+}
