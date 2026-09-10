@@ -128,18 +128,33 @@ export default function SearchPage() {
     setMaxPrice("");
   }
 
-  const field =
-    "w-full rounded-2xl border border-[#ebebeb] bg-white px-4 py-3 text-sm outline-none focus:border-zinc-400";
-
   const hasCriteria =
     Boolean(committedQuery) ||
     Boolean(neighborhood) ||
     Boolean(houseType) ||
     Boolean(minPrice) ||
-    Boolean(maxPrice);
+    Boolean(maxPrice) ||
+    Boolean(query.trim());
+
+  /** Clic dans le vide (hors champs / boutons / cartes) → reset filtres. */
+  function handleEmptyClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (!hasCriteria) return;
+    const el = e.target as HTMLElement;
+    if (
+      el.closest(
+        "a, button, input, select, textarea, label, form, [data-search-hit]",
+      )
+    ) {
+      return;
+    }
+    resetAll();
+  }
+
+  const field =
+    "w-full rounded-2xl border border-[#ebebeb] bg-white px-4 py-3 text-sm outline-none focus:border-zinc-400";
 
   return (
-    <div className="px-4 pb-4">
+    <div className="min-h-[70vh] px-4 pb-4" onClick={handleEmptyClick}>
       <h1 className="text-lg font-bold text-zinc-900">Recherche</h1>
       <p className="mt-1 text-sm text-zinc-500">
         Tape un mot-clé puis Entrée — ou utilise les filtres.
@@ -277,6 +292,7 @@ export default function SearchPage() {
               <Link
                 key={h.id}
                 href={`/houses/${h.id}`}
+                data-search-hit
                 className="flex gap-3 rounded-[1.5rem] bg-white p-3 shadow-sm active:opacity-95"
               >
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-zinc-100">
