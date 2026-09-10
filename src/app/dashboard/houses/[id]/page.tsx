@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { HouseSpecsGrid } from "@/components/HouseSpecsGrid";
 import { MediaCarousel } from "@/components/MediaCarousel";
 import { SellerShell } from "@/components/seller/SellerShell";
 import {
   STATUS_LABEL,
   formatFcfa,
+  getLockedAddressRows,
   type HouseStatus,
   type SellerHouse,
 } from "@/lib/mock/houses";
@@ -71,9 +73,7 @@ export default function HouseDetailSellerPage() {
                 {house.title}
               </h1>
               <p className="mt-0.5 text-xs text-zinc-500">
-                {[house.address, house.neighborhood, house.city]
-                  .filter(Boolean)
-                  .join(", ")}
+                {[house.neighborhood, house.city].filter(Boolean).join(", ")}
               </p>
             </div>
             <span
@@ -85,10 +85,30 @@ export default function HouseDetailSellerPage() {
           <p className="mt-2.5 text-xl font-bold tabular-nums text-zinc-900">
             {formatFcfa(house.price)}
             <span className="text-xs font-normal text-zinc-500"> /mois</span>
+            <span className="ml-1.5 text-xs font-semibold text-emerald-700">
+              · Négociable
+            </span>
           </p>
           <p className="mt-2.5 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">
             {house.description || "Pas de description."}
           </p>
+          <HouseSpecsGrid house={house} />
+          <div className="mt-3 space-y-1.5 border-t border-[#ebebeb] pt-3">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+              Adresse exacte
+            </p>
+            {getLockedAddressRows(house).map((row) => (
+              <div
+                key={row.label}
+                className="flex justify-between gap-3 text-[13px]"
+              >
+                <span className="shrink-0 text-zinc-400">{row.label}</span>
+                <span className="max-w-[65%] text-right font-semibold text-zinc-900">
+                  {row.value}
+                </span>
+              </div>
+            ))}
+          </div>
           <div className="mt-3 space-y-1.5 border-t border-[#ebebeb] pt-3">
             {house.showOwnerName !== false && (
               <div className="flex justify-between gap-3 text-[13px]">
@@ -103,27 +123,6 @@ export default function HouseDetailSellerPage() {
               <span className="font-semibold text-zinc-900">{house.phone}</span>
             </div>
           </div>
-
-          {house.features.length > 0 && (
-            <div className="mt-3 border-t border-[#ebebeb] pt-3">
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-zinc-400">
-                Caractéristiques
-              </p>
-              <dl className="grid grid-cols-2 gap-1.5">
-                {house.features.map((f) => (
-                  <div
-                    key={f.id}
-                    className="rounded-xl bg-[#f5f5f5] px-2.5 py-1.5"
-                  >
-                    <dt className="text-[10px] text-zinc-400">{f.label}</dt>
-                    <dd className="text-[13px] font-semibold text-zinc-900">
-                      {f.value}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          )}
         </div>
 
         <div className="flex flex-col gap-2">

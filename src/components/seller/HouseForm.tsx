@@ -5,9 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import {
   CITIES,
   HOUSE_TYPES,
+  buildHouseTitle,
+  composeAddress,
   formatFcfa,
   newId,
-  type HouseFeature,
   type HouseStatus,
   type HouseType,
   type SellerHouse,
@@ -28,54 +29,69 @@ import {
 } from "@/lib/video";
 
 type FormState = {
-  title: string;
   description: string;
   price: string;
   phone: string;
   showOwnerName: boolean;
   city: string;
   neighborhood: string;
-  address: string;
+  street: string;
+  avenue: string;
+  reference: string;
   houseType: HouseType;
+  bedrooms: string;
+  kitchens: string;
+  livingRooms: string;
+  showerInHouse: boolean;
+  showers: string;
+  housesOnPlot: string;
   photos: string[];
   videos: string[];
-  features: HouseFeature[];
 };
 
 function emptyForm(): FormState {
   return {
-    title: "",
     description: "",
     price: "",
     phone: "+242 ",
     showOwnerName: true,
     city: "Brazzaville",
     neighborhood: "",
-    address: "",
+    street: "",
+    avenue: "",
+    reference: "",
     houseType: "Maison",
+    bedrooms: "",
+    kitchens: "",
+    livingRooms: "",
+    showerInHouse: true,
+    showers: "",
+    housesOnPlot: "1",
     photos: [],
     videos: [],
-    features: [{ id: newId("f"), label: "", value: "" }],
   };
 }
 
 function fromHouse(h: SellerHouse): FormState {
   return {
-    title: h.title,
     description: h.description,
     price: String(h.price),
     phone: h.phone,
     showOwnerName: h.showOwnerName ?? true,
     city: h.city,
     neighborhood: h.neighborhood,
-    address: h.address,
+    street: h.street ?? "",
+    avenue: h.avenue ?? "",
+    reference: h.reference ?? "",
     houseType: h.houseType ?? "Maison",
+    bedrooms: String(h.bedrooms ?? ""),
+    kitchens: String(h.kitchens ?? ""),
+    livingRooms: String(h.livingRooms ?? ""),
+    showerInHouse: h.showerInHouse ?? true,
+    showers: String(h.showers ?? ""),
+    housesOnPlot: String(h.housesOnPlot ?? 1),
     photos: h.photos,
     videos: h.videos ?? [],
-    features:
-      h.features.length > 0
-        ? h.features
-        : [{ id: newId("f"), label: "", value: "" }],
   };
 }
 
@@ -91,20 +107,27 @@ function loadInitialForm(
     return initial ? fromHouse(initial) : emptyForm();
   }
   const draft = getHouseFormDraft<FormState>(houseId ?? null);
-  if (isValidDraft(draft)) {
+  // Ignore les brouillons de l’ancien formulaire (titre / caractéristiques libres)
+  if (isValidDraft(draft) && typeof draft.bedrooms === "string") {
     return {
       ...emptyForm(),
       ...draft,
       houseType: draft.houseType ?? "Maison",
-      features:
-        draft.features?.length > 0
-          ? draft.features
-          : [{ id: newId("f"), label: "", value: "" }],
+      street: draft.street ?? "",
+      avenue: draft.avenue ?? "",
+      reference: draft.reference ?? "",
       photos: draft.photos ?? [],
       videos: draft.videos ?? [],
+      showerInHouse: draft.showerInHouse ?? true,
+      housesOnPlot: draft.housesOnPlot ?? "1",
     };
   }
   return initial ? fromHouse(initial) : emptyForm();
+}
+
+function parseCount(raw: string): number {
+  const n = Number(String(raw).trim());
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : NaN;
 }
 
 export function HouseForm({
@@ -129,13 +152,11 @@ export function HouseForm({
   const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
-  const priceNum = Math.round(Number(form.price) || 0);
+  const priceNum = Number(form.price.replace(/\s/g, "")) || 0;
 
   useEffect(() => {
-    setForm(loadInitialForm(initial, draftId));
     setReady(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftId]);
+  }, []);
 
   useEffect(() => {
     if (!ready) return;
@@ -144,31 +165,6 @@ export function HouseForm({
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
-  }
-
-  function addFeature() {
-    update("features", [
-      ...form.features,
-      { id: newId("f"), label: "", value: "" },
-    ]);
-  }
-
-  function removeFeature(id: string) {
-    if (form.features.length <= 1) {
-      showError("Au moins une caractéristique est obligatoire.");
-      return;
-    }
-    update(
-      "features",
-      form.features.filter((f) => f.id !== id),
-    );
-  }
-
-  function setFeature(id: string, patch: Partial<HouseFeature>) {
-    update(
-      "features",
-      form.features.map((f) => (f.id === id ? { ...f, ...patch } : f)),
-    );
   }
 
   function showError(message: string) {
@@ -246,8 +242,30 @@ export function HouseForm({
   }
 
   function validate(): string | null {
-    if (!form.title.trim()) return "Le titre est obligatoire.";
-    if (!form.description.trim()) return "La description est obligatoire.";
+    const bedrooms = parseCount(form.bedrooms);
+    const kitchens = parseCount(form.kitchens);
+    const livingRooms = parseCount(form.livingRooms);
+    const showers = parseCount(form.showers);
+    const housesOnPlot = parseCount(form.housesOnPlot);
+
+    if (!Number.isFinite(bedrooms)) {
+      return "Indique le nombre de chambres.";
+    }
+    if (!Number.isFinite(kitchens)) {
+      return "Indique le nombre de cuisines.";
+    }
+    if (!Number.isFinite(livingRooms)) {
+      return "Indique le nombre de salons.";
+    }
+    if (!Number.isFinite(showers)) {
+      return "Indique le nombre de douches.";
+    }
+    if (!Number.isFinite(housesOnPlot) || housesOnPlot < 1) {
+      return "Indique le nombre de maisons dans la parcelle (min. 1).";
+    }
+    if (form.showerInHouse && showers < 1) {
+      return "Si la douche est dans la maison, indique au moins 1 douche.";
+    }
     if (!form.price.trim() || !priceNum || priceNum <= 0) {
       return "Le prix mensuel est obligatoire.";
     }
@@ -258,22 +276,10 @@ export function HouseForm({
     if (!form.city.trim()) return "La ville est obligatoire.";
     if (!form.houseType) return "Le type de maison est obligatoire.";
     if (!form.neighborhood.trim()) return "Le quartier est obligatoire.";
-    if (!form.address.trim()) return "L’adresse est obligatoire.";
+    if (!form.street.trim()) return "Le nom de la rue est obligatoire.";
+    if (!form.avenue.trim()) return "L’avenue est obligatoire.";
+    if (!form.reference.trim()) return "La référence est obligatoire.";
     if (form.photos.length < 1) return "Ajoutez au moins une photo.";
-    const featuresOk = form.features.filter(
-      (f) => f.label.trim() && f.value.trim(),
-    );
-    if (featuresOk.length < 1) {
-      return "Ajoutez au moins une caractéristique (ex. Chambre + nombre).";
-    }
-    const incomplete = form.features.some(
-      (f) =>
-        (f.label.trim() && !f.value.trim()) ||
-        (!f.label.trim() && f.value.trim()),
-    );
-    if (incomplete) {
-      return "Chaque caractéristique doit avoir un libellé et un nombre.";
-    }
     return null;
   }
 
@@ -288,22 +294,47 @@ export function HouseForm({
       `${profile.firstName} ${profile.lastName}`.trim() ||
       initial?.ownerName ||
       "Propriétaire";
+    const bedrooms = parseCount(form.bedrooms);
+    const kitchens = parseCount(form.kitchens);
+    const livingRooms = parseCount(form.livingRooms);
+    const showers = parseCount(form.showers);
+    const housesOnPlot = parseCount(form.housesOnPlot);
+    const street = form.street.trim();
+    const avenue = form.avenue.trim();
+    const reference = form.reference.trim();
+    const neighborhood = form.neighborhood.trim();
+
     setError(null);
+    const partial = {
+      houseType: form.houseType,
+      bedrooms,
+      neighborhood,
+      city: form.city,
+    };
     return {
       id: houseId ?? initial?.id ?? newId("house"),
-      title: form.title.trim(),
+      title: buildHouseTitle(partial),
       description: form.description.trim(),
       price: priceNum,
       phone: form.phone.trim(),
       ownerName,
       showOwnerName: form.showOwnerName,
       city: form.city,
-      neighborhood: form.neighborhood.trim(),
-      address: form.address.trim(),
+      neighborhood,
+      street,
+      avenue,
+      reference,
+      address: composeAddress({ street, avenue, reference, neighborhood }),
       houseType: form.houseType,
       photos: form.photos,
       videos: form.videos,
-      features: form.features.filter((f) => f.label.trim() && f.value.trim()),
+      bedrooms,
+      kitchens,
+      livingRooms,
+      showerInHouse: form.showerInHouse,
+      showers: form.showerInHouse ? showers : 0,
+      housesOnPlot,
+      features: [],
       status,
       contacts: initial?.contacts ?? 0,
       updatedAt: "À l'instant",
@@ -314,7 +345,6 @@ export function HouseForm({
     const house = buildHouse(status);
     if (!house) return;
 
-    // Publier en ligne nécessite l’abonnement
     if (status === "active" && !hasActiveSubscription()) {
       saveHouseFormDraft(form, draftId);
       const retour = pathname || "/dashboard/houses/new";
@@ -356,78 +386,6 @@ export function HouseForm({
 
       <label className="block space-y-1.5">
         <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-          Titre {req}
-        </span>
-        <input
-          className={field}
-          required
-          value={form.title}
-          onChange={(e) => update("title", e.target.value)}
-          placeholder="Ex : Villa Bacongo 4 chambres"
-        />
-      </label>
-
-      <label className="block space-y-1.5">
-        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-          Description {req}
-        </span>
-        <textarea
-          className={`${field} min-h-28 resize-y`}
-          required
-          value={form.description}
-          onChange={(e) => update("description", e.target.value)}
-          placeholder="Décrivez la maison, le quartier, les équipements…"
-        />
-      </label>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <label className="block space-y-1.5">
-          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            Prix mensuel (FCFA) {req}
-          </span>
-          <input
-            type="number"
-            min={1}
-            step={1000}
-            required
-            className={field}
-            value={form.price}
-            onChange={(e) => update("price", e.target.value)}
-            placeholder="250000"
-          />
-        </label>
-        <label className="block space-y-1.5">
-          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            Téléphone {req}
-          </span>
-          <input
-            type="tel"
-            required
-            className={field}
-            value={form.phone}
-            onChange={(e) => update("phone", e.target.value)}
-            placeholder="+242 06 000 00 00"
-          />
-        </label>
-      </div>
-
-      <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#ebebeb] bg-white px-4 py-3.5">
-        <input
-          type="checkbox"
-          className="h-4 w-4 rounded border-zinc-300"
-          checked={form.showOwnerName}
-          onChange={(e) => update("showOwnerName", e.target.checked)}
-        />
-        <span className="text-sm text-zinc-800">
-          Afficher mon nom sur l’annonce
-          <span className="mt-0.5 block text-xs text-zinc-500">
-            Si décoché, seul le numéro du propriétaire sera visible.
-          </span>
-        </span>
-      </label>
-
-      <label className="block space-y-1.5">
-        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
           Ville {req}
         </span>
         <select
@@ -439,24 +397,6 @@ export function HouseForm({
           {CITIES.map((c) => (
             <option key={c} value={c}>
               {c}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="block space-y-1.5">
-        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-          Type de maison {req}
-        </span>
-        <select
-          className={field}
-          required
-          value={form.houseType}
-          onChange={(e) => update("houseType", e.target.value as HouseType)}
-        >
-          {HOUSE_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
             </option>
           ))}
         </select>
@@ -477,23 +417,195 @@ export function HouseForm({
         </label>
         <label className="block space-y-1.5">
           <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            Adresse {req}
+            Nom de la rue {req}
           </span>
           <input
             className={field}
             required
-            value={form.address}
-            onChange={(e) => update("address", e.target.value)}
-            placeholder="Rue, numéro…"
+            value={form.street}
+            onChange={(e) => update("street", e.target.value)}
+            placeholder="Rue des Flamboyants"
+          />
+        </label>
+        <label className="block space-y-1.5">
+          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+            Avenue {req}
+          </span>
+          <input
+            className={field}
+            required
+            value={form.avenue}
+            onChange={(e) => update("avenue", e.target.value)}
+            placeholder="Avenue de l’Indépendance"
+          />
+        </label>
+        <label className="block space-y-1.5">
+          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+            Référence {req}
+          </span>
+          <input
+            className={field}
+            required
+            value={form.reference}
+            onChange={(e) => update("reference", e.target.value)}
+            placeholder="Face au marché, derrière l’école…"
+          />
+        </label>
+      </div>
+      <p className="text-xs text-zinc-500">
+        Rue, avenue et référence restent floutés jusqu’au paiement du
+        locataire.
+      </p>
+
+      <section className="rounded-[1.5rem] bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-bold text-zinc-900">
+          Composition {req}
+        </h2>
+        <p className="mt-1 text-xs text-zinc-500">
+          Ces infos apparaissent en premier et aident les locataires à chercher.
+        </p>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <CountField
+            label="Chambres"
+            value={form.bedrooms}
+            onChange={(v) => update("bedrooms", v)}
+            fieldClass={field}
+            required
+          />
+          <CountField
+            label="Cuisines"
+            value={form.kitchens}
+            onChange={(v) => update("kitchens", v)}
+            fieldClass={field}
+            required
+          />
+          <CountField
+            label="Salons"
+            value={form.livingRooms}
+            onChange={(v) => update("livingRooms", v)}
+            fieldClass={field}
+            required
+          />
+          <CountField
+            label="Douches"
+            value={form.showers}
+            onChange={(v) => update("showers", v)}
+            fieldClass={field}
+            required
+            disabled={!form.showerInHouse}
+          />
+        </div>
+
+        <label className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-[#ebebeb] px-4 py-3">
+          <span className="text-sm font-medium text-zinc-900">
+            Douche dans la maison {req}
+          </span>
+          <input
+            type="checkbox"
+            checked={form.showerInHouse}
+            onChange={(e) => {
+              const on = e.target.checked;
+              setForm((f) => ({
+                ...f,
+                showerInHouse: on,
+                showers: on ? f.showers || "1" : "0",
+              }));
+            }}
+            className="h-5 w-5 accent-zinc-900"
+          />
+        </label>
+
+        <div className="mt-3">
+          <CountField
+            label="Maisons dans la parcelle"
+            value={form.housesOnPlot}
+            onChange={(v) => update("housesOnPlot", v)}
+            fieldClass={field}
+            required
+            min={1}
+          />
+        </div>
+      </section>
+
+      <label className="block space-y-1.5">
+        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+          Description{" "}
+          <span className="normal-case font-normal text-zinc-400">
+            (détails : parking, cour, etc.)
+          </span>
+        </span>
+        <textarea
+          className={`${field} min-h-28 resize-y`}
+          value={form.description}
+          onChange={(e) => update("description", e.target.value)}
+          placeholder="Ex. parking, cour, générateur, proximité marché…"
+        />
+      </label>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className="block space-y-1.5">
+          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+            Prix mensuel (FCFA) {req}
+          </span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            className={field}
+            required
+            value={form.price}
+            onChange={(e) => update("price", e.target.value)}
+            placeholder="250000"
+          />
+        </label>
+        <label className="block space-y-1.5">
+          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+            Téléphone {req}
+          </span>
+          <input
+            className={field}
+            required
+            value={form.phone}
+            onChange={(e) => update("phone", e.target.value)}
+            placeholder="+242 06 …"
           />
         </label>
       </div>
 
+      <label className="flex items-center justify-between gap-3 rounded-2xl border border-[#ebebeb] bg-white px-4 py-3">
+        <span className="text-sm font-medium text-zinc-900">
+          Afficher mon nom sur l’annonce
+        </span>
+        <input
+          type="checkbox"
+          checked={form.showOwnerName}
+          onChange={(e) => update("showOwnerName", e.target.checked)}
+          className="h-5 w-5 accent-zinc-900"
+        />
+      </label>
+
+      <label className="block space-y-1.5">
+        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+          Type de maison {req}
+        </span>
+        <select
+          className={field}
+          required
+          value={form.houseType}
+          onChange={(e) => update("houseType", e.target.value as HouseType)}
+        >
+          {HOUSE_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <section className="rounded-[1.5rem] bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-zinc-900">
-            Photos {req}
-          </h2>
+          <h2 className="text-sm font-bold text-zinc-900">Photos {req}</h2>
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
@@ -565,8 +677,8 @@ export function HouseForm({
           />
         </div>
         <p className="mt-1 text-xs text-zinc-500">
-          Optionnel — max 2 vidéos, ~20 s, compressées avec FFmpeg dans le
-          navigateur.
+          Optionnel — max 2 vidéos, jusqu’à 10 min / 200 Mo, stockées sur
+          Cloudflare R2.
         </p>
         {videoLoading && (
           <p className="mt-3 text-sm text-zinc-500">
@@ -586,69 +698,15 @@ export function HouseForm({
         )}
       </section>
 
-      <section className="rounded-[1.5rem] bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-bold text-zinc-900">
-            Caractéristiques {req}
-          </h2>
-          <button
-            type="button"
-            onClick={addFeature}
-            className="shrink-0 rounded-full border border-[#ebebeb] px-3 py-1.5 text-xs font-semibold text-zinc-800"
-          >
-            + Ajouter
-          </button>
-        </div>
-        <p className="mt-1 text-xs text-zinc-500">
-          Écrivez le détail (chambre, cuisine…) puis le nombre à droite.
-        </p>
-        <div className="mt-3 space-y-2">
-          {form.features.map((f) => (
-            <div
-              key={f.id}
-              className="grid grid-cols-[minmax(0,1fr)_3.5rem_2rem] items-center gap-2"
-            >
-              <input
-                type="text"
-                required
-                className="w-full min-w-0 rounded-2xl border border-[#ebebeb] bg-white px-3 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-400"
-                placeholder="Chambre, Cuisine, Salon…"
-                value={f.label}
-                onChange={(e) => setFeature(f.id, { label: e.target.value })}
-              />
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                required
-                className="w-full rounded-2xl border border-[#ebebeb] bg-white px-1 py-3 text-center text-sm tabular-nums text-zinc-900 outline-none focus:border-zinc-400"
-                placeholder="0"
-                value={f.value}
-                onChange={(e) =>
-                  setFeature(f.id, {
-                    value: e.target.value.replace(/\D/g, ""),
-                  })
-                }
-              />
-              <button
-                type="button"
-                onClick={() => removeFeature(f.id)}
-                className="flex h-10 w-8 items-center justify-center text-sm text-red-500"
-                aria-label="Supprimer"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <div className="rounded-[1.5rem] bg-zinc-900 px-5 py-4 text-white">
         <p className="text-xs uppercase tracking-wide text-zinc-400">
           Loyer mensuel
         </p>
         <p className="mt-1 text-2xl font-bold tabular-nums">
           {formatFcfa(priceNum)}
+        </p>
+        <p className="mt-1 text-xs font-semibold text-emerald-400">
+          Négociable sur toutes les annonces
         </p>
       </div>
 
@@ -669,6 +727,47 @@ export function HouseForm({
         </button>
       </div>
     </div>
+  );
+}
+
+function CountField({
+  label,
+  value,
+  onChange,
+  fieldClass,
+  required,
+  disabled,
+  min = 0,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  fieldClass: string;
+  required?: boolean;
+  disabled?: boolean;
+  min?: number;
+}) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+        {label}{" "}
+        {required ? (
+          <span className="text-red-500" aria-hidden>
+            *
+          </span>
+        ) : null}
+      </span>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={min}
+        disabled={disabled}
+        className={`${fieldClass} disabled:bg-zinc-50 disabled:text-zinc-400`}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="0"
+      />
+    </label>
   );
 }
 

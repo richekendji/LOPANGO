@@ -3,6 +3,7 @@
 import {
   SEED_CONTACTS,
   SEED_HOUSES,
+  normalizeHouse,
   type ContactRequest,
   type HouseStatus,
   type SellerHouse,
@@ -62,14 +63,8 @@ export function getHouses(): SellerHouse[] {
     writeJson(HOUSES_KEY, SEED_HOUSES);
     return SEED_HOUSES;
   }
-  // Normalise les anciennes entrées sans houseType / ownerName
-  return stored.map((h) => ({
-    ...h,
-    houseType: h.houseType ?? "Maison",
-    ownerName: h.ownerName?.trim() || "Propriétaire",
-    showOwnerName: h.showOwnerName ?? true,
-    videos: h.videos ?? [],
-  }));
+  // Normalise anciennes annonces (features → champs structurés)
+  return stored.map((h) => normalizeHouse(h));
 }
 
 export function getHouse(id: string): SellerHouse | undefined {

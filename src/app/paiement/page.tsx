@@ -136,6 +136,13 @@ function PaiementContent() {
   async function onPay() {
     setError(null);
     setPaying(true);
+
+    // Local (next dev) : active l’abonnement tout de suite, sans SebPay.
+    if (process.env.NODE_ENV === "development") {
+      window.setTimeout(() => finishSuccess(), 350);
+      return;
+    }
+
     try {
       const res = await fetch("/api/payments/create", {
         method: "POST",
@@ -382,7 +389,9 @@ function PaiementContent() {
             </button>
 
             <p className="mt-3 text-center text-[11px] leading-snug text-zinc-400">
-              Paiement sécurisé via SebPay · Congo (XAF)
+              {process.env.NODE_ENV === "development"
+                ? "Mode local : le paiement s’active immédiatement (sans SebPay)."
+                : "Paiement sécurisé via SebPay · Congo (XAF)"}
             </p>
           </div>
         </div>

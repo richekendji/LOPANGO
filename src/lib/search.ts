@@ -35,6 +35,7 @@ function tokenVariants(token: string): string[] {
     chambre: ["chambres"],
     salon: ["salons"],
     cuisine: ["cuisines"],
+    douche: ["douches", "sdb", "bain", "salle"],
     parking: ["parkings", "garage", "garages"],
     balcon: ["balcons"],
     terrasse: ["terrasses"],
@@ -45,6 +46,7 @@ function tokenVariants(token: string): string[] {
     villa: ["villas"],
     appartement: ["appartements", "appart", "apparts"],
     maison: ["maisons"],
+    parcelle: ["parcelles"],
   };
 
   for (const key of [token, t]) {
@@ -55,6 +57,25 @@ function tokenVariants(token: string): string[] {
   return Array.from(set);
 }
 
+function pushCountPhrases(parts: string[], count: number, ...labels: string[]) {
+  if (!Number.isFinite(count)) return;
+  const n = String(count);
+  parts.push(n);
+  for (const label of labels) {
+    const stem = singularize(normalizeSearchText(label));
+    const plur = pluralize(stem);
+    parts.push(
+      label,
+      stem,
+      plur,
+      `${n} ${stem}`,
+      `${stem} ${n}`,
+      `${n} ${plur}`,
+      `${plur} ${n}`,
+    );
+  }
+}
+
 /** Index texte riche d’une annonce (ordres chiffre/libellé + variantes). */
 export function buildHouseSearchIndex(house: SellerHouse): string {
   const parts: string[] = [
@@ -62,29 +83,36 @@ export function buildHouseSearchIndex(house: SellerHouse): string {
     house.description,
     house.city,
     house.neighborhood,
+    house.street,
+    house.avenue,
+    house.reference,
     house.address,
     house.houseType,
   ];
 
-  for (const f of house.features) {
+  pushCountPhrases(parts, house.bedrooms ?? 0, "chambre", "chambres");
+  pushCountPhrases(parts, house.kitchens ?? 0, "cuisine", "cuisines");
+  pushCountPhrases(parts, house.livingRooms ?? 0, "salon", "salons");
+  pushCountPhrases(parts, house.showers ?? 0, "douche", "douches");
+  pushCountPhrases(
+    parts,
+    house.housesOnPlot ?? 1,
+    "maison",
+    "maisons",
+    "parcelle",
+  );
+
+  if (house.showerInHouse) {
+    parts.push("douche dans la maison", "salle de bain", "sdb");
+  } else {
+    parts.push("sans douche dans la maison", "douche exterieure");
+  }
+
+  for (const f of house.features ?? []) {
     const label = f.label.trim();
     const value = f.value.trim();
     if (!label && !value) continue;
-
     parts.push(label, value, `${label} ${value}`, `${value} ${label}`);
-
-    const labelNorm = normalizeSearchText(label);
-    const stem = singularize(labelNorm);
-    const plur = pluralize(stem);
-    if (value) {
-      parts.push(
-        `${value} ${stem}`,
-        `${stem} ${value}`,
-        `${value} ${plur}`,
-        `${plur} ${value}`,
-      );
-    }
-    parts.push(stem, plur);
   }
 
   return normalizeSearchText(parts.join(" "));
@@ -105,12 +133,13 @@ export function houseMatchesQuery(house: SellerHouse, query: string): boolean {
 
   return tokens.every((token) => {
     if (/^\d+$/.test(token)) {
-      // Le chiffre doit apparaître comme token (évite "4" dans "450000" trop large…
-      // mais on accepte aussi include pour prix/ids courts).
       const parts = hay.split(" ");
       if (parts.includes(token)) return true;
-      // Accepte aussi "4chambres" collé après normalisation ratée
-      return hay.includes(` ${token} `) || hay.startsWith(`${token} `) || hay.endsWith(` ${token}`);
+      return (
+        hay.includes(` ${token} `) ||
+        hay.startsWith(`${token} `) ||
+        hay.endsWith(` ${token}`)
+      );
     }
 
     return tokenVariants(token).some((v) => hay.includes(v));

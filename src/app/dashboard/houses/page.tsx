@@ -133,6 +133,9 @@ export default function HousesListPage() {
                   <div className="mt-2 flex items-center justify-between text-sm">
                     <span className="font-bold tabular-nums text-zinc-900">
                       {formatFcfa(h.price)}
+                      <span className="ml-1 text-[11px] font-semibold text-emerald-700">
+                        · Négociable
+                      </span>
                     </span>
                     <span className="text-xs text-zinc-400">
                       {h.contacts} contacts · {h.updatedAt}
