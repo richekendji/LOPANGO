@@ -59,7 +59,8 @@ function PaiementContent() {
 
   const [period, setPeriod] = useState<BillingPeriod>("mensuel");
   const [phone, setPhone] = useState("+242 ");
-  const [operator, setOperator] = useState(CONGO_OPERATORS[0].slug);
+  const [operator, setOperator] =
+    useState<(typeof CONGO_OPERATORS)[number]["slug"]>(CONGO_OPERATORS[0].slug);
   const [otpCode, setOtpCode] = useState("");
   const [needOtp, setNeedOtp] = useState(false);
   const [ussdCode, setUssdCode] = useState<string | null>(null);
@@ -303,7 +304,11 @@ function PaiementContent() {
                 <select
                   className={field}
                   value={operator}
-                  onChange={(e) => setOperator(e.target.value)}
+                  onChange={(e) =>
+                    setOperator(
+                      e.target.value as (typeof CONGO_OPERATORS)[number]["slug"],
+                    )
+                  }
                 >
                   {CONGO_OPERATORS.map((op) => (
                     <option key={op.slug} value={op.slug}>
