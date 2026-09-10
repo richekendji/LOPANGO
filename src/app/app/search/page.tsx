@@ -12,6 +12,7 @@ import {
   type SellerHouse,
 } from "@/lib/mock/houses";
 import { getHouses, subscribeStore } from "@/lib/mock/store";
+import { houseMatchesQuery } from "@/lib/search";
 
 const SEARCH_DRAFT_KEY = "lopango_search_draft_v1";
 
@@ -89,19 +90,7 @@ export default function SearchPage() {
 
       if (!q) return true;
 
-      const hay = [
-        h.title,
-        h.description,
-        h.city,
-        h.neighborhood,
-        h.address,
-        h.houseType,
-        ...h.features.map((f) => `${f.label} ${f.value}`),
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return hay.includes(q);
+      return houseMatchesQuery(h, q);
     });
   }, [houses, query, neighborhood, houseType, minPrice, maxPrice]);
 
@@ -124,7 +113,7 @@ export default function SearchPage() {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Mots-clés : villa, parking, Bacongo…"
+          placeholder="Ex : 4 chambres salon Bacongo…"
           className={`${field} pl-11`}
         />
       </div>
