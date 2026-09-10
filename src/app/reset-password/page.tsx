@@ -1,15 +1,12 @@
 import Link from "next/link";
-import { signIn } from "@/app/actions/auth";
-import { PhoneInput } from "@/components/PhoneInput";
+import { updatePassword } from "@/app/actions/auth";
 
 const ERRORS: Record<string, string> = {
-  "missing-fields": "Veuillez remplir tous les champs.",
-  "invalid-phone": "Numéro invalide. Format : 06 ou 05 + 123 45 67.",
-  "bad-credentials": "Numéro ou mot de passe incorrect.",
-  "reset-link-invalid": "Lien de réinitialisation invalide ou expiré.",
+  "weak-password": "Le mot de passe doit contenir au moins 6 caractères.",
+  "password-mismatch": "Les mots de passe ne correspondent pas.",
 };
 
-export default async function LoginPage({
+export default async function ResetPasswordPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
@@ -29,9 +26,11 @@ export default async function LoginPage({
           >
             LOPANGO
           </Link>
-          <h1 className="mt-4 text-2xl font-bold text-zinc-900">Connexion</h1>
+          <h1 className="mt-4 text-2xl font-bold text-zinc-900">
+            Nouveau mot de passe
+          </h1>
           <p className="mt-2 text-sm text-zinc-500">
-            Numéro + mot de passe uniquement.
+            Choisissez un nouveau mot de passe pour votre compte.
           </p>
         </div>
 
@@ -42,51 +41,46 @@ export default async function LoginPage({
         )}
 
         <form
-          action={signIn}
+          action={updatePassword}
           className="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm"
         >
-          <PhoneInput />
-
           <label className="block space-y-1">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-              Mot de passe
+              Nouveau mot de passe
             </span>
             <input
               name="password"
               type="password"
               required
-              autoComplete="current-password"
+              minLength={6}
+              autoComplete="new-password"
               className={field}
-              placeholder="Votre mot de passe"
+              placeholder="Au moins 6 caractères"
             />
           </label>
 
-          <div className="text-right">
-            <Link
-              href="/forgot-password"
-              className="text-sm font-semibold text-zinc-700 underline-offset-2 hover:underline"
-            >
-              Mot de passe oublié ?
-            </Link>
-          </div>
+          <label className="block space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+              Confirmer
+            </span>
+            <input
+              name="passwordConfirm"
+              type="password"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              className={field}
+              placeholder="Retapez le mot de passe"
+            />
+          </label>
 
           <button
             type="submit"
             className="rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white hover:bg-zinc-800"
           >
-            Se connecter
+            Enregistrer et ouvrir l&apos;app
           </button>
         </form>
-
-        <p className="text-center text-sm text-zinc-500">
-          Pas encore de compte ?{" "}
-          <Link
-            href="/register"
-            className="font-semibold text-zinc-900 underline-offset-2 hover:underline"
-          >
-            S&apos;inscrire
-          </Link>
-        </p>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { AuthAccountCard } from "@/components/AuthAccountCard";
+import { AuthAccountCard, ProfileSignOut } from "@/components/AuthAccountCard";
 import { ProfileClient } from "./ProfileClient";
 
 export default function ProfilePage() {
@@ -8,6 +8,7 @@ export default function ProfilePage() {
       <p className="mt-1 text-sm text-zinc-500">Vos informations LOPANGO</p>
       <AuthAccountCard />
       <ProfileClient />
+      <ProfileSignOut />
     </div>
   );
 }

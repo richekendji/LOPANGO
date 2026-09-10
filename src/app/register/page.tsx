@@ -1,5 +1,16 @@
 import Link from "next/link";
 import { signUp } from "@/app/actions/auth";
+import { PhoneInput } from "@/components/PhoneInput";
+
+const ERRORS: Record<string, string> = {
+  "missing-fields": "Veuillez remplir tous les champs.",
+  "invalid-phone": "Numéro invalide. Format : 06 ou 05 + 123 45 67.",
+  "invalid-email": "Adresse email invalide.",
+  "weak-password": "Le mot de passe doit contenir au moins 6 caractères.",
+  "password-mismatch": "Les mots de passe ne correspondent pas.",
+  "phone-taken": "Ce numéro est déjà utilisé. Connectez-vous ou utilisez un autre numéro.",
+  "email-taken": "Cet email est déjà utilisé. Choisissez-en un autre pour la récupération.",
+};
 
 export default async function RegisterPage({
   searchParams,
@@ -27,16 +38,14 @@ export default async function RegisterPage({
             Créer un compte
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
-            Prénom + nom, et c&apos;est tout. Identifiant et mot de passe
-            générés automatiquement — pas d&apos;email.
+            Prénom, nom, numéro et mot de passe. Vous êtes ensuite directement
+            dans l&apos;app.
           </p>
         </div>
 
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {error === "missing-fields"
-              ? "Veuillez remplir tous les champs."
-              : error}
+            {ERRORS[error] ?? error}
           </div>
         )}
 
@@ -73,6 +82,56 @@ export default async function RegisterPage({
             </label>
           </div>
 
+          <PhoneInput />
+
+          <label className="block space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+              Email de récupération
+            </span>
+            <input
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              className={field}
+              placeholder="vous@email.com"
+            />
+            <p className="text-[11px] text-zinc-400">
+              Utilisé uniquement si vous oubliez votre mot de passe — pas pour
+              vous connecter.
+            </p>
+          </label>
+
+          <label className="block space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+              Mot de passe
+            </span>
+            <input
+              name="password"
+              type="password"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              className={field}
+              placeholder="Au moins 6 caractères"
+            />
+          </label>
+
+          <label className="block space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+              Confirmer le mot de passe
+            </span>
+            <input
+              name="passwordConfirm"
+              type="password"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              className={field}
+              placeholder="Retapez le mot de passe"
+            />
+          </label>
+
           <fieldset className="space-y-2">
             <legend className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
               Vous êtes ?
@@ -101,7 +160,7 @@ export default async function RegisterPage({
             type="submit"
             className="rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white hover:bg-zinc-800"
           >
-            Créer mon compte en un clic
+            Créer mon compte
           </button>
         </form>
 

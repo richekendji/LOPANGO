@@ -65,7 +65,7 @@ export default function Home() {
                 Pour les propriétaires
               </h2>
               <ul className="mt-4 space-y-3 text-zinc-600">
-                <li>1. Compte en un clic (prénom + nom)</li>
+                <li>1. Compte avec prénom, nom, numéro et mot de passe</li>
                 <li>2. Publiez vos maisons avec photos, prix et détails</li>
                 <li>3. Recevez les demandes des locataires directement</li>
               </ul>
@@ -75,7 +75,7 @@ export default function Home() {
                 Pour les locataires
               </h2>
               <ul className="mt-4 space-y-3 text-zinc-600">
-                <li>1. Compte en un clic (prénom + nom)</li>
+                <li>1. Compte avec prénom, nom, numéro et mot de passe</li>
                 <li>2. Parcourez les maisons partout au Congo</li>
                 <li>3. Contactez directement le propriétaire</li>
               </ul>
