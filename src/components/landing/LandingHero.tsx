@@ -37,7 +37,7 @@ export function LandingHero() {
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/35 to-black/15" />
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 pb-14 pt-28 sm:px-6 sm:pb-20">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 pb-28 pt-28 sm:px-6 sm:pb-36">
         {/* Hors du bloc blanc — sur la photo */}
         <div className="hero-anim max-w-lg">
           <p className="text-xl font-bold leading-snug tracking-tight text-white drop-shadow-sm sm:text-2xl">
