@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signIn } from "@/app/actions/auth";
+import { AuthBackLink } from "@/components/AuthBackLink";
 import { PhoneInput } from "@/components/PhoneInput";
 
 const ERRORS: Record<string, string> = {
@@ -22,6 +23,7 @@ export default async function LoginPage({
   return (
     <div className="min-h-full bg-[#f5f5f5]">
       <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-10">
+        <AuthBackLink href="/" />
         <div className="text-center">
           <Link
             href="/"
