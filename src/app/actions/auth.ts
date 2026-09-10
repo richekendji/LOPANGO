@@ -7,6 +7,7 @@ import {
   isValidPhone,
   normalizeEmail,
   normalizePhone,
+  phoneToAuthEmail,
 } from "@/lib/phone";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -21,10 +22,8 @@ function siteUrl() {
   return "http://localhost:3000";
 }
 
-function registerError(code: string, role?: string): never {
-  const q = new URLSearchParams({ error: code });
-  if (role) q.set("role", role);
-  redirect(`/register?${q.toString()}`);
+function registerError(code: string): never {
+  redirect(`/register?error=${encodeURIComponent(code)}`);
 }
 
 function loginError(code: string): never {
@@ -35,44 +34,35 @@ export async function signUp(formData: FormData) {
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const phoneRaw = String(formData.get("phone") ?? "");
-  const emailRaw = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
   const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
-  const roleRaw = String(formData.get("role") ?? "tenant");
-  const role = roleRaw === "owner" ? "owner" : "tenant";
 
-  if (!firstName || !lastName || !phoneRaw || !emailRaw || !password) {
-    registerError("missing-fields", role);
+  if (!firstName || !lastName || !phoneRaw || !password) {
+    registerError("missing-fields");
   }
 
   const phone = normalizePhone(phoneRaw);
   if (!phone || !isValidPhone(phone)) {
-    registerError("invalid-phone", role);
-  }
-
-  const email = normalizeEmail(emailRaw);
-  if (!isValidEmail(email)) {
-    registerError("invalid-email", role);
+    registerError("invalid-phone");
   }
 
   if (password.length < 6) {
-    registerError("weak-password", role);
+    registerError("weak-password");
   }
 
   if (password !== passwordConfirm) {
-    registerError("password-mismatch", role);
+    registerError("password-mismatch");
   }
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     registerError(
       "Configuration incomplète : SUPABASE_SERVICE_ROLE_KEY manquante.",
-      role,
     );
   }
 
   const admin = createAdminClient();
+  const authEmail = phoneToAuthEmail(phone);
 
-  // Numéro déjà utilisé ?
   const { data: existingPhone } = await admin
     .from("profiles")
     .select("id")
@@ -80,18 +70,17 @@ export async function signUp(formData: FormData) {
     .maybeSingle();
 
   if (existingPhone) {
-    registerError("phone-taken", role);
+    registerError("phone-taken");
   }
 
   const { data, error } = await admin.auth.admin.createUser({
-    email,
+    email: authEmail,
     password,
     email_confirm: true,
     user_metadata: {
       full_name: `${firstName} ${lastName}`,
       first_name: firstName,
       last_name: lastName,
-      role,
       phone,
     },
   });
@@ -99,31 +88,30 @@ export async function signUp(formData: FormData) {
   if (error || !data.user) {
     const msg = error?.message ?? "";
     if (/already|registered|exists/i.test(msg)) {
-      registerError("email-taken", role);
+      registerError("phone-taken");
     }
-    registerError(msg || "Création du compte impossible.", role);
+    registerError(msg || "Création du compte impossible.");
   }
 
   const { error: profileError } = await admin.from("profiles").upsert({
     id: data.user.id,
-    email,
+    email: null,
     full_name: `${firstName} ${lastName}`,
     phone,
-    role,
+    role: "tenant",
   });
 
   if (profileError) {
-    // Rollback auth user si le numéro unique échoue (course rare)
     await admin.auth.admin.deleteUser(data.user.id);
     if (/unique|duplicate/i.test(profileError.message)) {
-      registerError("phone-taken", role);
+      registerError("phone-taken");
     }
-    registerError(profileError.message, role);
+    registerError(profileError.message);
   }
 
   const supabase = await createClient();
   const { error: signInError } = await supabase.auth.signInWithPassword({
-    email,
+    email: authEmail,
     password,
   });
 
@@ -163,19 +151,17 @@ export async function signIn(formData: FormData) {
     loginError("bad-credentials");
   }
 
-  let email = profile.email as string | null;
-  if (!email) {
-    const { data: userData } = await admin.auth.admin.getUserById(profile.id);
-    email = userData.user?.email ?? null;
+  let email = (profile.email as string | null) || null;
+  if (!email || email.endsWith("@lopango.local")) {
+    email = phoneToAuthEmail(phone);
   }
 
-  if (!email) {
-    loginError("bad-credentials");
-  }
+  const { data: userData } = await admin.auth.admin.getUserById(profile.id);
+  const authEmail = userData.user?.email || email;
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({
-    email,
+    email: authEmail,
     password,
   });
 
@@ -194,23 +180,49 @@ export async function signOut() {
   redirect("/");
 }
 
-/** Envoie le lien/code de réinitialisation à l'email choisi. */
+/**
+ * Récupération : l'utilisateur choisit l'email où recevoir le lien.
+ * On rattache cet email au compte trouvé via le numéro, puis on envoie le mail.
+ */
 export async function requestPasswordReset(formData: FormData) {
+  const phoneRaw = String(formData.get("phone") ?? "");
   const email = normalizeEmail(String(formData.get("email") ?? ""));
 
   if (!isValidEmail(email)) {
     redirect("/forgot-password?error=invalid-email");
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl()}/auth/callback?next=/reset-password`,
-  });
+  const phone = normalizePhone(phoneRaw);
+  if (!phone) {
+    redirect("/forgot-password?error=invalid-phone");
+  }
 
-  if (error) {
-    redirect(
-      `/forgot-password?error=${encodeURIComponent(error.message)}`,
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    redirect("/forgot-password?error=config");
+  }
+
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("phone", phone)
+    .maybeSingle();
+
+  // Ne pas révéler si le numéro existe : message générique
+  if (profile) {
+    const { error: updateError } = await admin.auth.admin.updateUserById(
+      profile.id,
+      { email, email_confirm: true },
     );
+
+    if (!updateError) {
+      await admin.from("profiles").update({ email }).eq("id", profile.id);
+
+      const supabase = await createClient();
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl()}/auth/callback?next=/reset-password`,
+      });
+    }
   }
 
   redirect("/forgot-password?sent=1");

@@ -68,3 +68,8 @@ export function normalizeEmail(email: string): string {
 export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email));
 }
+
+/** Email technique Supabase dérivé du numéro (jamais montré à l'utilisateur). */
+export function phoneToAuthEmail(phone: string): string {
+  return `${phone}@lopango.local`;
+}

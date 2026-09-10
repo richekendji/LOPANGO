@@ -43,13 +43,13 @@ export default function Home() {
           <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4 px-4 pb-12 sm:px-6 sm:pb-16">
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Link
-                href="/register?role=owner"
+                href="/register"
                 className="w-full rounded-xl bg-zinc-900 px-6 py-3.5 text-center text-base font-semibold text-white shadow-lg hover:bg-zinc-800 sm:w-auto"
               >
                 Je suis propriétaire
               </Link>
               <Link
-                href="/register?role=tenant"
+                href="/register"
                 className="w-full rounded-xl bg-white px-6 py-3.5 text-center text-base font-semibold text-zinc-900 shadow-lg hover:bg-zinc-100 sm:w-auto"
               >
                 Je cherche une maison

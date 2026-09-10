@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { requestPasswordReset } from "@/app/actions/auth";
+import { PhoneInput } from "@/components/PhoneInput";
 
 const ERRORS: Record<string, string> = {
   "invalid-email": "Adresse email invalide.",
+  "invalid-phone": "Numéro invalide. Format : 06 ou 05 + 123 45 67.",
+  config: "Configuration serveur incomplète.",
 };
 
 export default async function ForgotPasswordPage({
@@ -29,15 +32,15 @@ export default async function ForgotPasswordPage({
             Mot de passe oublié
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
-            Indiquez l&apos;email de récupération choisi à l&apos;inscription.
-            Vous recevrez un lien pour créer un nouveau mot de passe.
+            Indiquez votre numéro de compte, puis l&apos;email où recevoir le
+            lien de réinitialisation.
           </p>
         </div>
 
         {params.sent && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-            Si un compte existe avec cet email, un message vient d&apos;être
-            envoyé. Ouvrez-le pour réinitialiser votre mot de passe.
+            Si un compte correspond, un message a été envoyé à cet email.
+            Ouvrez-le pour choisir un nouveau mot de passe.
           </div>
         )}
 
@@ -51,9 +54,11 @@ export default async function ForgotPasswordPage({
           action={requestPasswordReset}
           className="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm"
         >
+          <PhoneInput />
+
           <label className="block space-y-1">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-              Email de récupération
+              Email où recevoir le lien
             </span>
             <input
               name="email"
