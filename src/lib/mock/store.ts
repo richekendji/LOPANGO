@@ -68,6 +68,7 @@ export function getHouses(): SellerHouse[] {
     houseType: h.houseType ?? "Maison",
     ownerName: h.ownerName?.trim() || "Propriétaire",
     showOwnerName: h.showOwnerName ?? true,
+    videos: h.videos ?? [],
   }));
 }
 

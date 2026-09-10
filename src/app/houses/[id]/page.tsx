@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
-import { PhotoCarousel } from "@/components/PhotoCarousel";
+import { MediaCarousel } from "@/components/MediaCarousel";
 import { formatFcfa, newId, type SellerHouse } from "@/lib/mock/houses";
 import {
   getHouse,
@@ -97,7 +97,11 @@ function HousePublicContent() {
         </Link>
 
         <div className="space-y-3">
-          <PhotoCarousel photos={house.photos} alt={house.title} />
+          <MediaCarousel
+            photos={house.photos}
+            videos={house.videos ?? []}
+            alt={house.title}
+          />
 
           {/* Infos visibles sans abonnement (recherche / critères) */}
           <div className="rounded-2xl bg-white px-4 py-3.5 shadow-sm">

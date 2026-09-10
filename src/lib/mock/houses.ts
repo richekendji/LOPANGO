@@ -34,6 +34,8 @@ export type SellerHouse = {
   address: string;
   houseType: HouseType;
   photos: string[];
+  /** Réfs vidéo (`idb:video:…` ou URL). */
+  videos: string[];
   features: HouseFeature[];
   status: HouseStatus;
   contacts: number;
@@ -96,6 +98,7 @@ export const SEED_HOUSES: SellerHouse[] = [
     address: "Avenue de la Paix, Bacongo",
     houseType: "Villa",
     photos: [SEED_PHOTOS[0], SEED_PHOTOS[1], SEED_PHOTOS[2]],
+    videos: [],
     features: [
       { id: "f1", label: "Chambres", value: "4" },
       { id: "f2", label: "Salons", value: "2" },
@@ -118,6 +121,7 @@ export const SEED_HOUSES: SellerHouse[] = [
     address: "Rue des Flamboyants, Moungali",
     houseType: "Maison",
     photos: [SEED_PHOTOS[1], SEED_PHOTOS[3]],
+    videos: [],
     features: [
       { id: "f1", label: "Chambres", value: "3" },
       { id: "f2", label: "Salons", value: "1" },
@@ -140,6 +144,7 @@ export const SEED_HOUSES: SellerHouse[] = [
     address: "Quartier Poto-Poto",
     houseType: "Appartement",
     photos: [SEED_PHOTOS[2]],
+    videos: [],
     features: [
       { id: "f1", label: "Chambres", value: "2" },
       { id: "f2", label: "Cuisines", value: "1" },
@@ -161,6 +166,7 @@ export const SEED_HOUSES: SellerHouse[] = [
     address: "Boulevard du Général",
     houseType: "Villa",
     photos: [SEED_PHOTOS[3]],
+    videos: [],
     features: [
       { id: "f1", label: "Chambres", value: "5" },
       { id: "f2", label: "Salons", value: "2" },

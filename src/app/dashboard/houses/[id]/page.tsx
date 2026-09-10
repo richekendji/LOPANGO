@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { PhotoCarousel } from "@/components/PhotoCarousel";
+import { MediaCarousel } from "@/components/MediaCarousel";
 import { SellerShell } from "@/components/seller/SellerShell";
 import {
   STATUS_LABEL,
@@ -58,7 +58,11 @@ export default function HouseDetailSellerPage() {
   return (
     <SellerShell title="Détail annonce" backHref="/dashboard/houses">
       <div className="space-y-4">
-        <PhotoCarousel photos={house.photos} alt={house.title} />
+        <MediaCarousel
+          photos={house.photos}
+          videos={house.videos ?? []}
+          alt={house.title}
+        />
 
         <div className="rounded-2xl bg-white px-4 py-3.5 shadow-sm">
           <div className="flex items-start justify-between gap-2">

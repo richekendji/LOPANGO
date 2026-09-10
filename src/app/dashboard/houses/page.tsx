@@ -104,6 +104,15 @@ export default function HousesListPage() {
                       className="object-cover"
                       unoptimized={isLocalImageUrl(h.photos[0])}
                     />
+                  ) : (h.videos?.length ?? 0) > 0 ? (
+                    <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-zinc-500">
+                      Vidéo
+                    </div>
+                  ) : null}
+                  {(h.videos?.length ?? 0) > 0 && h.photos[0] ? (
+                    <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-semibold text-white">
+                      +vid
+                    </span>
                   ) : null}
                 </div>
                 <div className="min-w-0 flex-1">

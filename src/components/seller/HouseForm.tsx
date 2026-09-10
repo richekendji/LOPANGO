@@ -21,6 +21,11 @@ import {
   saveHouseFormDraft,
 } from "@/lib/mock/store";
 import { fileToPersistentUrl } from "@/lib/images";
+import {
+  compressAndStoreVideo,
+  deleteVideoBlob,
+  resolveVideoUrl,
+} from "@/lib/video";
 
 type FormState = {
   title: string;
@@ -33,6 +38,7 @@ type FormState = {
   address: string;
   houseType: HouseType;
   photos: string[];
+  videos: string[];
   features: HouseFeature[];
 };
 
@@ -48,6 +54,7 @@ function emptyForm(): FormState {
     address: "",
     houseType: "Maison",
     photos: [],
+    videos: [],
     features: [{ id: newId("f"), label: "", value: "" }],
   };
 }
@@ -64,6 +71,7 @@ function fromHouse(h: SellerHouse): FormState {
     address: h.address,
     houseType: h.houseType ?? "Maison",
     photos: h.photos,
+    videos: h.videos ?? [],
     features:
       h.features.length > 0
         ? h.features
@@ -93,6 +101,7 @@ function loadInitialForm(
           ? draft.features
           : [{ id: newId("f"), label: "", value: "" }],
       photos: draft.photos ?? [],
+      videos: draft.videos ?? [],
     };
   }
   return initial ? fromHouse(initial) : emptyForm();
@@ -108,6 +117,7 @@ export function HouseForm({
   const router = useRouter();
   const pathname = usePathname();
   const fileRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const draftId = houseId ?? initial?.id ?? null;
   const [form, setForm] = useState<FormState>(() =>
@@ -115,6 +125,8 @@ export function HouseForm({
   );
   const [error, setError] = useState<string | null>(null);
   const [photosLoading, setPhotosLoading] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   const priceNum = Math.round(Number(form.price) || 0);
@@ -190,6 +202,49 @@ export function HouseForm({
     );
   }
 
+  async function onVideosSelected(files: FileList | null) {
+    if (!files?.length) return;
+    const remaining = Math.max(0, 2 - form.videos.length);
+    if (remaining === 0) {
+      showError("Maximum 2 vidéos par annonce.");
+      return;
+    }
+    setVideoLoading(true);
+    setError(null);
+    try {
+      const picked = Array.from(files).slice(0, remaining);
+      const refs: string[] = [];
+      for (const file of picked) {
+        if (!file.type.startsWith("video/")) {
+          showError("Seuls les fichiers vidéo sont acceptés.");
+          continue;
+        }
+        const ref = await compressAndStoreVideo(file, setVideoProgress);
+        refs.push(ref);
+      }
+      if (refs.length) {
+        setForm((f) => ({ ...f, videos: [...f.videos, ...refs] }));
+      }
+    } catch (err) {
+      showError(
+        err instanceof Error
+          ? err.message
+          : "Impossible d’importer la vidéo. Réessayez.",
+      );
+    } finally {
+      setVideoLoading(false);
+      setVideoProgress(null);
+    }
+  }
+
+  async function removeVideo(ref: string) {
+    await deleteVideoBlob(ref);
+    update(
+      "videos",
+      form.videos.filter((v) => v !== ref),
+    );
+  }
+
   function validate(): string | null {
     if (!form.title.trim()) return "Le titre est obligatoire.";
     if (!form.description.trim()) return "La description est obligatoire.";
@@ -247,6 +302,7 @@ export function HouseForm({
       address: form.address.trim(),
       houseType: form.houseType,
       photos: form.photos,
+      videos: form.videos,
       features: form.features.filter((f) => f.label.trim() && f.value.trim()),
       status,
       contacts: initial?.contacts ?? 0,
@@ -487,6 +543,50 @@ export function HouseForm({
       </section>
 
       <section className="rounded-[1.5rem] bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-zinc-900">Vidéos</h2>
+          <button
+            type="button"
+            onClick={() => videoRef.current?.click()}
+            disabled={videoLoading || form.videos.length >= 2}
+            className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+          >
+            + Ajouter
+          </button>
+          <input
+            ref={videoRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={(e) => {
+              void onVideosSelected(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </div>
+        <p className="mt-1 text-xs text-zinc-500">
+          Optionnel — max 2 vidéos, ~20 s, compressées avec FFmpeg dans le
+          navigateur.
+        </p>
+        {videoLoading && (
+          <p className="mt-3 text-sm text-zinc-500">
+            {videoProgress ?? "Traitement de la vidéo…"}
+          </p>
+        )}
+        {form.videos.length > 0 && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {form.videos.map((ref) => (
+              <VideoThumb
+                key={ref}
+                videoRef={ref}
+                onRemove={() => void removeVideo(ref)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-[1.5rem] bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-bold text-zinc-900">
             Caractéristiques {req}
@@ -568,6 +668,64 @@ export function HouseForm({
           Publier
         </button>
       </div>
+    </div>
+  );
+}
+
+function VideoThumb({
+  videoRef,
+  onRemove,
+}: {
+  videoRef: string;
+  onRemove: () => void;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let revoked: string | null = null;
+    let cancelled = false;
+
+    void resolveVideoUrl(videoRef).then((resolved) => {
+      if (cancelled) {
+        if (resolved?.startsWith("blob:")) URL.revokeObjectURL(resolved);
+        return;
+      }
+      setUrl(resolved);
+      if (resolved?.startsWith("blob:")) revoked = resolved;
+    });
+
+    return () => {
+      cancelled = true;
+      if (revoked) URL.revokeObjectURL(revoked);
+    };
+  }, [videoRef]);
+
+  return (
+    <div className="relative aspect-video overflow-hidden rounded-xl bg-zinc-100">
+      {url ? (
+        <video
+          src={url}
+          className="h-full w-full object-cover"
+          muted
+          playsInline
+          preload="metadata"
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center text-xs text-zinc-400">
+          …
+        </div>
+      )}
+      <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-semibold text-white">
+        Vidéo
+      </span>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-xs text-white"
+        aria-label="Supprimer la vidéo"
+      >
+        ✕
+      </button>
     </div>
   );
 }
