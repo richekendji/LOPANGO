@@ -20,8 +20,7 @@ function HousePublicContent() {
   const searchParams = useSearchParams();
   const [house, setHouse] = useState<SellerHouse | null>(null);
   const [subscribed, setSubscribed] = useState(false);
-  const unlocked =
-    subscribed || searchParams.get("debloque") === "1";
+  const unlocked = subscribed || searchParams.get("debloque") === "1";
   const [composeOpen, setComposeOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
@@ -85,11 +84,13 @@ function HousePublicContent() {
     setTimeout(() => setSent(false), 2500);
   }
 
+  const zone = [house.neighborhood, house.city].filter(Boolean).join(", ");
+
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
       <div className="mx-auto max-w-lg px-4 pb-10 pt-3">
         <Link
-          href="/app"
+          href="/app/search"
           className="mb-3 inline-flex rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-zinc-900 shadow-sm"
         >
           ← Retour
@@ -98,63 +99,77 @@ function HousePublicContent() {
         <div className="space-y-3">
           <PhotoCarousel photos={house.photos} alt={house.title} />
 
-          <div className="relative overflow-hidden rounded-2xl bg-white shadow-sm">
-            <div
-              className={`px-4 py-3.5 ${
-                unlocked ? "" : "pointer-events-none select-none blur-[7px]"
-              }`}
-              aria-hidden={!unlocked}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-lg font-bold leading-snug text-zinc-900">
-                    {house.title}
-                  </h1>
-                  <p className="mt-0.5 text-xs text-zinc-500">
-                    {[house.address, house.neighborhood, house.city]
-                      .filter(Boolean)
-                      .join(", ")}
-                  </p>
-                  {house.houseType && (
-                    <span className="mt-1.5 inline-block rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-semibold text-zinc-600">
-                      {house.houseType}
-                    </span>
-                  )}
-                </div>
-
-                {unlocked ? (
-                  <button
-                    type="button"
-                    aria-label="Envoyer un message au vendeur"
-                    onClick={() => {
-                      setComposeOpen((o) => !o);
-                      setError(null);
-                    }}
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
-                      composeOpen
-                        ? "bg-zinc-900 text-white"
-                        : "bg-[#f5f5f5] text-zinc-900"
-                    }`}
-                  >
-                    <Icon name="message" className="h-5 w-5" />
-                  </button>
-                ) : (
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] text-zinc-900">
-                    <Icon name="message" className="h-5 w-5" />
+          {/* Infos visibles sans abonnement (recherche / critères) */}
+          <div className="rounded-2xl bg-white px-4 py-3.5 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg font-bold leading-snug text-zinc-900">
+                  {house.title}
+                </h1>
+                {zone && (
+                  <p className="mt-0.5 text-xs text-zinc-500">{zone}</p>
+                )}
+                {house.houseType && (
+                  <span className="mt-1.5 inline-block rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-semibold text-zinc-600">
+                    {house.houseType}
                   </span>
                 )}
               </div>
+            </div>
 
-              <p className="mt-2.5 text-xl font-bold tabular-nums text-zinc-900">
-                {formatFcfa(house.price)}
-                <span className="text-xs font-normal text-zinc-500"> /mois</span>
-              </p>
+            <p className="mt-2.5 text-xl font-bold tabular-nums text-zinc-900">
+              {formatFcfa(house.price)}
+              <span className="text-xs font-normal text-zinc-500"> /mois</span>
+            </p>
 
+            {house.description && (
               <p className="mt-2.5 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">
-                {house.description || "Pas de description."}
+                {house.description}
+              </p>
+            )}
+
+            {house.features.length > 0 && (
+              <div className="mt-3 border-t border-[#ebebeb] pt-3">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+                  Caractéristiques
+                </p>
+                <dl className="grid grid-cols-2 gap-1.5">
+                  {house.features.map((f) => (
+                    <div
+                      key={f.id}
+                      className="rounded-xl bg-[#f5f5f5] px-2.5 py-1.5"
+                    >
+                      <dt className="text-[10px] text-zinc-400">{f.label}</dt>
+                      <dd className="text-[13px] font-semibold text-zinc-900">
+                        {f.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
+          </div>
+
+          {/* Contact critique — flouté sans abo */}
+          <div className="relative overflow-hidden rounded-2xl bg-white shadow-sm">
+            <div
+              className={`px-4 py-3.5 ${
+                unlocked ? "" : "pointer-events-none select-none blur-[8px]"
+              }`}
+              aria-hidden={!unlocked}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+                Contact & adresse
               </p>
 
-              <div className="mt-3 space-y-1.5 border-t border-[#ebebeb] pt-3">
+              <div className="mt-2.5 space-y-2">
+                <div className="flex justify-between gap-3 text-[13px]">
+                  <span className="text-zinc-400">Adresse exacte</span>
+                  <span className="max-w-[60%] text-right font-semibold text-zinc-900">
+                    {house.address || "—"}
+                  </span>
+                </div>
+
                 {house.showOwnerName !== false && (
                   <div className="flex justify-between gap-3 text-[13px]">
                     <span className="text-zinc-400">Propriétaire</span>
@@ -163,8 +178,9 @@ function HousePublicContent() {
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between gap-3 text-[13px]">
-                  <span className="text-zinc-400">Numéro du propriétaire</span>
+
+                <div className="flex items-center justify-between gap-3 text-[13px]">
+                  <span className="text-zinc-400">Numéro</span>
                   {unlocked ? (
                     <a
                       href={`tel:${house.phone.replace(/\s/g, "")}`}
@@ -174,30 +190,30 @@ function HousePublicContent() {
                     </a>
                   ) : (
                     <span className="font-semibold text-zinc-900">
-                      {house.phone}
+                      {house.phone || "+242 06 ••• •• ••"}
                     </span>
                   )}
                 </div>
               </div>
 
-              {house.features.length > 0 && (
+              {unlocked && (
                 <div className="mt-3 border-t border-[#ebebeb] pt-3">
-                  <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-zinc-400">
-                    Caractéristiques
-                  </p>
-                  <dl className="grid grid-cols-2 gap-1.5">
-                    {house.features.map((f) => (
-                      <div
-                        key={f.id}
-                        className="rounded-xl bg-[#f5f5f5] px-2.5 py-1.5"
-                      >
-                        <dt className="text-[10px] text-zinc-400">{f.label}</dt>
-                        <dd className="text-[13px] font-semibold text-zinc-900">
-                          {f.value}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
+                  <button
+                    type="button"
+                    aria-label="Envoyer un message au vendeur"
+                    onClick={() => {
+                      setComposeOpen((o) => !o);
+                      setError(null);
+                    }}
+                    className={`flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold ${
+                      composeOpen
+                        ? "bg-zinc-900 text-white"
+                        : "bg-[#f5f5f5] text-zinc-900"
+                    }`}
+                  >
+                    <Icon name="message" className="h-4 w-4" />
+                    Message au propriétaire
+                  </button>
                 </div>
               )}
 
@@ -212,9 +228,6 @@ function HousePublicContent() {
                   onSubmit={sendMessage}
                   className="mt-3 space-y-2 border-t border-[#ebebeb] pt-3"
                 >
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">
-                    Message au vendeur
-                  </p>
                   <textarea
                     className="min-h-24 w-full resize-y rounded-2xl border border-[#ebebeb] bg-[#f5f5f5] px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
                     placeholder="Bonjour, cette maison est-elle encore disponible ?"
@@ -237,19 +250,18 @@ function HousePublicContent() {
             </div>
 
             {!unlocked && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gradient-to-b from-white/40 via-white/70 to-white/90 px-5 py-8">
-                <p className="max-w-[17rem] text-center text-[14px] font-semibold leading-snug text-zinc-900">
-                  Débloquez l’adresse de la parcelle, le numéro du propriétaire
-                  et les détails concernant la maison
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gradient-to-b from-white/30 via-white/75 to-white/95 px-5 py-6">
+                <p className="max-w-[18rem] text-center text-[14px] font-semibold leading-snug text-zinc-900">
+                  Débloque l&apos;adresse exacte et le numéro du propriétaire
                 </p>
                 <Link
                   href={`/paiement?retour=${encodeURIComponent(`/houses/${house.id}`)}`}
-                  className="mt-5 flex w-full max-w-sm items-center justify-center rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white shadow-md active:opacity-90"
+                  className="mt-4 flex w-full max-w-sm items-center justify-center rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white shadow-md active:opacity-90"
                 >
-                  Débloquer les informations
+                  Débloquer le contact
                 </Link>
-                <p className="mt-2.5 text-center text-[11px] text-zinc-500">
-                  Réservé aux abonnés LOPANGO
+                <p className="mt-2 text-center text-[11px] text-zinc-500">
+                  Type, prix et caractéristiques restent visibles
                 </p>
               </div>
             )}

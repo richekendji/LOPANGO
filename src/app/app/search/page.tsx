@@ -249,6 +249,14 @@ export default function SearchPage() {
                   {h.houseType ?? "Maison"} ·{" "}
                   {[h.neighborhood, h.city].filter(Boolean).join(", ")}
                 </p>
+                {h.features.length > 0 && (
+                  <p className="mt-1 truncate text-[11px] text-zinc-500">
+                    {h.features
+                      .slice(0, 3)
+                      .map((f) => `${f.label} ${f.value}`)
+                      .join(" · ")}
+                  </p>
+                )}
                 <p className="mt-2 text-sm font-bold tabular-nums text-zinc-900">
                   {formatFcfa(h.price)}
                   <span className="font-normal text-zinc-400"> /mois</span>
