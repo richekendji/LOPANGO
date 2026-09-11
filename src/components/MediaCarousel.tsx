@@ -18,17 +18,20 @@ export function MediaCarousel({
   alt,
   className = "aspect-[9/16]",
   rounded = "rounded-[1.75rem]",
+  videoMeta,
 }: {
   photos: string[];
   videos?: string[];
   alt: string;
   className?: string;
   rounded?: string;
+  /** Affiché en bas des slides vidéo (feed). */
+  videoMeta?: { type: string; price: string };
 }) {
   const items = useMemo<MediaItem[]>(() => {
     const list: MediaItem[] = [
-      ...photos.map((src) => ({ kind: "image" as const, src })),
       ...videos.map((src) => ({ kind: "video" as const, src })),
+      ...photos.map((src) => ({ kind: "image" as const, src })),
     ];
     return list;
   }, [photos, videos]);
@@ -111,6 +114,19 @@ export function MediaCarousel({
         </div>
       )}
 
+      {current.kind === "video" && videoMeta && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-14 pt-12">
+          <div className="flex items-end justify-between gap-3">
+            <p className="min-w-0 truncate text-[13px] font-semibold text-white drop-shadow">
+              {videoMeta.type}
+            </p>
+            <p className="shrink-0 text-right text-[13px] font-bold text-white drop-shadow">
+              {videoMeta.price}
+            </p>
+          </div>
+        </div>
+      )}
+
       {current.kind === "video" && (
         <span className="absolute left-3 top-3 z-10 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
           Vidéo
@@ -136,7 +152,11 @@ export function MediaCarousel({
             ›
           </button>
 
-          <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
+          <div
+            className={`absolute left-1/2 z-10 flex -translate-x-1/2 gap-1.5 ${
+              current.kind === "video" && videoMeta ? "bottom-[4.75rem]" : "bottom-3"
+            }`}
+          >
             {items.map((item, i) => (
               <button
                 key={`${item.kind}-${i}`}

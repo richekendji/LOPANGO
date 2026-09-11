@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { MediaCarousel } from "@/components/MediaCarousel";
-import { type SellerHouse } from "@/lib/mock/houses";
+import { formatRent, type SellerHouse } from "@/lib/mock/houses";
 
 export function FeedPostCard({
   house,
@@ -35,7 +35,7 @@ export function FeedPostCard({
         </button>
       </div>
 
-      {/* Média carré (photos + vidéos) */}
+      {/* Média carré (vidéos d’abord, puis photos) */}
       {hasMedia ? (
         <MediaCarousel
           photos={house.photos}
@@ -43,6 +43,10 @@ export function FeedPostCard({
           alt={house.title}
           className="aspect-[9/16]"
           rounded="rounded-none"
+          videoMeta={{
+            type: house.houseType,
+            price: formatRent(house.price),
+          }}
         />
       ) : (
         <div className="flex aspect-[9/16] w-full items-center justify-center bg-zinc-100 text-sm text-zinc-400">
