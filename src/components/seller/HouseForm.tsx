@@ -17,7 +17,7 @@ import {
   clearHouseFormDraft,
   getHouseFormDraft,
   getProfile,
-  hasActiveSubscription,
+  refreshSubscriptionStatus,
   saveHouse,
   saveHouseFormDraft,
 } from "@/lib/mock/store";
@@ -341,17 +341,20 @@ export function HouseForm({
     };
   }
 
-  function submit(status: HouseStatus) {
+  async function submit(status: HouseStatus) {
     const house = buildHouse(status);
     if (!house) return;
 
-    if (status === "active" && !hasActiveSubscription()) {
-      saveHouseFormDraft(form, draftId);
-      const retour = pathname || "/dashboard/houses/new";
-      router.push(
-        `/paiement?contexte=publier&retour=${encodeURIComponent(retour)}`,
-      );
-      return;
+    if (status === "active") {
+      const active = await refreshSubscriptionStatus();
+      if (!active) {
+        saveHouseFormDraft(form, draftId);
+        const retour = pathname || "/dashboard/houses/new";
+        router.push(
+          `/paiement?contexte=publier&retour=${encodeURIComponent(retour)}`,
+        );
+        return;
+      }
     }
 
     saveHouse(house);
@@ -637,7 +640,7 @@ export function HouseForm({
             {form.photos.map((url, i) => (
               <div
                 key={`photo-${i}`}
-                className="relative aspect-square overflow-hidden rounded-2xl bg-zinc-100"
+                className="relative aspect-[9/16] overflow-hidden rounded-2xl bg-zinc-100"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={url} alt="" className="h-full w-full object-cover" />
@@ -800,7 +803,7 @@ function VideoThumb({
   }, [videoRef]);
 
   return (
-    <div className="relative aspect-video overflow-hidden rounded-xl bg-zinc-100">
+    <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-zinc-100">
       {url ? (
         <video
           src={url}

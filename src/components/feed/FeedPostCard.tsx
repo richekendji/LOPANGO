@@ -41,11 +41,11 @@ export function FeedPostCard({
           photos={house.photos}
           videos={house.videos ?? []}
           alt={house.title}
-          className="aspect-square"
+          className="aspect-[9/16]"
           rounded="rounded-none"
         />
       ) : (
-        <div className="flex aspect-square w-full items-center justify-center bg-zinc-100 text-sm text-zinc-400">
+        <div className="flex aspect-[9/16] w-full items-center justify-center bg-zinc-100 text-sm text-zinc-400">
           Pas de média
         </div>
       )}

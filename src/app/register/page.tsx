@@ -6,10 +6,14 @@ import { PhoneInput } from "@/components/PhoneInput";
 const ERRORS: Record<string, string> = {
   "missing-fields": "Veuillez remplir tous les champs.",
   "invalid-phone": "Numéro invalide. Format : 06 ou 05 + 123 45 67.",
-  "weak-password": "Le mot de passe doit contenir au moins 6 caractères.",
+  "invalid-email": "Email de récupération invalide.",
+  "weak-password": "Le mot de passe doit contenir au moins 8 caractères.",
   "password-mismatch": "Les mots de passe ne correspondent pas.",
   "phone-taken":
     "Ce numéro est déjà utilisé. Connectez-vous ou utilisez un autre numéro.",
+  config: "Configuration serveur incomplète.",
+  "rate-limit": "Trop de tentatives. Réessayez plus tard.",
+  "signup-failed": "Création du compte impossible. Réessayez.",
 };
 
 export default async function RegisterPage({
@@ -38,14 +42,13 @@ export default async function RegisterPage({
             Créer un compte
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
-            Prénom, nom, numéro et mot de passe. Ensuite vous êtes dans
-            l&apos;app.
+            Prénom, nom, numéro, email de récupération et mot de passe.
           </p>
         </div>
 
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {ERRORS[error] ?? error}
+            {ERRORS[error] ?? "Une erreur est survenue."}
           </div>
         )}
 
@@ -86,16 +89,33 @@ export default async function RegisterPage({
 
           <label className="block space-y-1">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+              Email de récupération
+            </span>
+            <input
+              name="recoveryEmail"
+              type="email"
+              required
+              autoComplete="email"
+              className={field}
+              placeholder="vous@email.com"
+            />
+            <span className="text-[11px] text-zinc-400">
+              Obligatoire pour réinitialiser le mot de passe.
+            </span>
+          </label>
+
+          <label className="block space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
               Mot de passe
             </span>
             <input
               name="password"
               type="password"
               required
-              minLength={6}
+              minLength={8}
               autoComplete="new-password"
               className={field}
-              placeholder="Au moins 6 caractères"
+              placeholder="Au moins 8 caractères"
             />
           </label>
 
@@ -107,7 +127,7 @@ export default async function RegisterPage({
               name="passwordConfirm"
               type="password"
               required
-              minLength={6}
+              minLength={8}
               autoComplete="new-password"
               className={field}
               placeholder="Retapez le mot de passe"

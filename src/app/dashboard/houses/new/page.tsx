@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SellerShell } from "@/components/seller/SellerShell";
 import { HouseForm } from "@/components/seller/HouseForm";
-import { hasActiveSubscription } from "@/lib/mock/store";
+import {
+  hasActiveSubscription,
+  refreshSubscriptionStatus,
+} from "@/lib/mock/store";
 
 const PAY_URL =
   "/paiement?contexte=publier&retour=" +
@@ -12,17 +15,31 @@ const PAY_URL =
 
 export default function NewHousePage() {
   const router = useRouter();
+  const [ready, setReady] = useState(false);
+  const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    if (!hasActiveSubscription()) {
-      router.replace(PAY_URL);
-    }
+    let cancelled = false;
+    void (async () => {
+      const active = await refreshSubscriptionStatus();
+      if (cancelled) return;
+      if (!active) {
+        router.replace(PAY_URL);
+        setReady(true);
+        return;
+      }
+      setAllowed(true);
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
-  if (!hasActiveSubscription()) {
+  if (!ready || (!allowed && !hasActiveSubscription())) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center bg-[#f5f5f5] text-sm text-zinc-500">
-        Redirection vers l’abonnement…
+        Vérification de l’abonnement…
       </div>
     );
   }

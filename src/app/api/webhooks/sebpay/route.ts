@@ -1,10 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSebPay } from "@/lib/sebpay";
+import {
+  activateSubscriptionForUser,
+  parsePeriodFromExternalRef,
+} from "@/lib/subscription";
+
+const REF_RE =
+  /^lopango_(mensuel|annuel)_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})_/i;
 
 /**
- * Webhook SebPay — confirmation serveur.
- * L’activation côté UI se fait aussi via polling /api/payments/status
- * (avant la base de données).
+ * Webhook SebPay — confirmation serveur + activation abo en DB.
  */
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -19,8 +24,7 @@ export async function POST(request: NextRequest) {
     if (!sebpay.verifyWebhookSignature(body, signature)) {
       return NextResponse.json({ error: "Signature invalide" }, { status: 401 });
     }
-  } catch (err) {
-    console.error("[sebpay webhook config]", err);
+  } catch {
     return NextResponse.json({ error: "Config serveur" }, { status: 500 });
   }
 
@@ -35,12 +39,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
 
-  console.info("[sebpay webhook]", {
-    status: payload.status,
-    ref: payload.external_ref,
-    tx: payload.transaction_id,
-  });
+  const status = String(payload.status ?? "").toLowerCase();
+  const approved =
+    status === "approved" || status === "success" || status === "paid";
+  const ref = payload.external_ref ?? "";
+  const match = REF_RE.exec(ref);
 
-  // Phase base : activer la souscription en DB ici.
+  if (approved && match) {
+    const userId = match[2];
+    try {
+      await activateSubscriptionForUser({
+        userId,
+        period: parsePeriodFromExternalRef(ref),
+        transactionId: payload.transaction_id ?? ref,
+        paymentMethod: "sebpay",
+      });
+    } catch {
+      /* SebPay peut retenter */
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }

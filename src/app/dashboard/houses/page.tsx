@@ -94,13 +94,13 @@ export default function HousesListPage() {
                 href={`/dashboard/houses/${h.id}`}
                 className="flex gap-3 rounded-[1.5rem] bg-white p-3 shadow-sm active:opacity-95"
               >
-                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-zinc-100">
+                <div className="relative aspect-[9/16] h-28 shrink-0 overflow-hidden rounded-2xl bg-zinc-100">
                   {h.photos[0] ? (
                     <Image
                       src={h.photos[0]}
                       alt=""
                       fill
-                      sizes="80px"
+                      sizes="72px"
                       className="object-cover"
                       unoptimized={isLocalImageUrl(h.photos[0])}
                     />

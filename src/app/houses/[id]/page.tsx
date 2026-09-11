@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { HouseSpecsGrid } from "@/components/HouseSpecsGrid";
 import { MediaCarousel } from "@/components/MediaCarousel";
@@ -11,6 +11,7 @@ import {
   getHouse,
   getProfile,
   hasActiveSubscription,
+  refreshSubscriptionStatus,
   saveContact,
   saveHouse,
   subscribeStore,
@@ -18,10 +19,9 @@ import {
 
 function HousePublicContent() {
   const { id } = useParams<{ id: string }>();
-  const searchParams = useSearchParams();
   const [house, setHouse] = useState<SellerHouse | null>(null);
   const [subscribed, setSubscribed] = useState(false);
-  const unlocked = subscribed || searchParams.get("debloque") === "1";
+  const unlocked = subscribed;
   const [composeOpen, setComposeOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
@@ -33,6 +33,7 @@ function HousePublicContent() {
       setSubscribed(hasActiveSubscription());
     };
     refresh();
+    void refreshSubscriptionStatus().then(setSubscribed);
     return subscribeStore(refresh);
   }, [id]);
 
@@ -102,6 +103,7 @@ function HousePublicContent() {
             photos={house.photos}
             videos={house.videos ?? []}
             alt={house.title}
+            className="mx-auto aspect-[9/16] w-full max-w-sm"
           />
 
           {/* Infos visibles sans abonnement — composition / prix / critères */}
@@ -267,15 +269,5 @@ function HousePublicContent() {
 }
 
 export default function HousePublicPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#f5f5f5] text-sm text-zinc-500">
-          Chargement…
-        </div>
-      }
-    >
-      <HousePublicContent />
-    </Suspense>
-  );
+  return <HousePublicContent />;
 }

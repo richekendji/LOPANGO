@@ -16,7 +16,7 @@ export function MediaCarousel({
   photos,
   videos = [],
   alt,
-  className = "aspect-[4/3]",
+  className = "aspect-[9/16]",
   rounded = "rounded-[1.75rem]",
 }: {
   photos: string[];

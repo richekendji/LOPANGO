@@ -12,6 +12,7 @@ import {
 import { formatFcfa } from "@/lib/mock/houses";
 import {
   getPaiementPeriod,
+  refreshSubscriptionStatus,
   savePaiementPeriod,
   setSubscriptionActive,
 } from "@/lib/mock/store";
@@ -38,11 +39,8 @@ const ARGUMENTS_PUBLIER = [
   "Toi seul décides. Toi seul choisis.",
 ];
 
-function buildReturnUrl(retour: string, contexte: string) {
-  const base = retour.startsWith("/") ? retour : "/app";
-  if (contexte === "publier") return base;
-  const sep = base.includes("?") ? "&" : "?";
-  return `${base}${sep}debloque=1`;
+function buildReturnUrl(retour: string) {
+  return retour.startsWith("/") ? retour : "/app";
 }
 
 function PaiementContent() {
@@ -86,12 +84,13 @@ function PaiementContent() {
   const priceSuffix = period === "mensuel" ? "/mois" : "/an";
   const argumentsList = isPublier ? ARGUMENTS_PUBLIER : ARGUMENTS_LOCATAIRE;
 
-  function finishSuccess() {
+  async function finishSuccess() {
     if (pollRef.current) clearInterval(pollRef.current);
+    await refreshSubscriptionStatus();
     setSubscriptionActive(true);
     setPolling(false);
     setPaying(false);
-    router.replace(buildReturnUrl(retour, contexte));
+    router.replace(buildReturnUrl(retour));
   }
 
   function startPolling(ref: string) {
@@ -110,7 +109,7 @@ function PaiementContent() {
           error?: string;
         };
         if (data.approved) {
-          finishSuccess();
+          void finishSuccess();
           return;
         }
         if (data.rejected) {
@@ -137,12 +136,6 @@ function PaiementContent() {
     setError(null);
     setPaying(true);
 
-    // Local (next dev) : active l’abonnement tout de suite, sans SebPay.
-    if (process.env.NODE_ENV === "development") {
-      window.setTimeout(() => finishSuccess(), 350);
-      return;
-    }
-
     try {
       const res = await fetch("/api/payments/create", {
         method: "POST",
@@ -164,6 +157,8 @@ function PaiementContent() {
         otpRequired?: boolean;
         ussdCode?: string | null;
         status?: string;
+        activated?: boolean;
+        approved?: boolean;
       };
 
       if (!res.ok || !data.ok) {
@@ -179,6 +174,12 @@ function PaiementContent() {
         return;
       }
 
+      // Dev : le serveur active l’abo immédiatement.
+      if (data.approved || data.activated || data.status === "approved") {
+        await finishSuccess();
+        return;
+      }
+
       if (data.otpRequired && !otpCode) {
         setNeedOtp(true);
         setUssdCode(data.ussdCode ?? null);
@@ -188,7 +189,8 @@ function PaiementContent() {
         return;
       }
 
-      const ref = data.transactionId || data.externalRef;
+      // Toujours poller avec externalRef (contient l’user id — contrôle d’accès).
+      const ref = data.externalRef || data.transactionId;
       if (!ref) {
         setError("Référence de transaction manquante.");
         setPaying(false);

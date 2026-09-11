@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { InstantTabLink, useInstantNav } from "@/components/InstantNav";
-import { hasActiveSubscription, subscribeStore } from "@/lib/mock/store";
+import { hasActiveSubscription, refreshSubscriptionStatus, subscribeStore } from "@/lib/mock/store";
 
 const PUBLISH_FORM = "/dashboard/houses/new";
 const PUBLISH_PAY =
@@ -29,6 +29,7 @@ function BottomNav() {
   useEffect(() => {
     const refresh = () => setSubscribed(hasActiveSubscription());
     refresh();
+    void refreshSubscriptionStatus().then(setSubscribed);
     return subscribeStore(refresh);
   }, []);
 

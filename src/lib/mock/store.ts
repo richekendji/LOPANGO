@@ -132,24 +132,40 @@ export function saveProfile(profile: UserProfile) {
   writeJson(PROFILE_KEY, profile);
 }
 
-/** Abonnement mock — remis à zéro à chaque rechargement complet de page. */
-let storeBooted = false;
-
-function bootStoreOnce() {
-  if (typeof window === "undefined" || storeBooted) return;
-  storeBooted = true;
-  // Nouveau chargement de page = non abonné (pour pouvoir retester le parcours)
-  localStorage.setItem(SUB_KEY, JSON.stringify({ active: false }));
-}
+/** Abonnement — cache UI seulement ; la source de vérité est /api/subscription. */
+let serverSubCache: boolean | null = null;
 
 export function hasActiveSubscription(): boolean {
-  bootStoreOnce();
-  return readJson<{ active: boolean }>(SUB_KEY, { active: false }).active;
+  return serverSubCache === true;
 }
 
 export function setSubscriptionActive(active: boolean) {
-  bootStoreOnce();
-  writeJson(SUB_KEY, { active });
+  serverSubCache = active;
+  if (typeof window !== "undefined") {
+    writeJson(SUB_KEY, { active });
+    window.dispatchEvent(new Event("lopango-store"));
+  }
+}
+
+/** Rafraîchit le statut d’abonnement depuis le serveur (DB). */
+export async function refreshSubscriptionStatus(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/subscription", { cache: "no-store" });
+    if (!res.ok) {
+      serverSubCache = false;
+      return false;
+    }
+    const data = (await res.json()) as { active?: boolean };
+    serverSubCache = Boolean(data.active);
+    if (typeof window !== "undefined") {
+      writeJson(SUB_KEY, { active: serverSubCache });
+      window.dispatchEvent(new Event("lopango-store"));
+    }
+    return serverSubCache;
+  } catch {
+    serverSubCache = false;
+    return false;
+  }
 }
 
 /** Brouillon formulaire publier / éditer — survit au rechargement. */

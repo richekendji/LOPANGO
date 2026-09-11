@@ -64,6 +64,7 @@ export default function HouseDetailSellerPage() {
           photos={house.photos}
           videos={house.videos ?? []}
           alt={house.title}
+          className="mx-auto aspect-[9/16] w-full max-w-sm"
         />
 
         <div className="rounded-2xl bg-white px-4 py-3.5 shadow-sm">

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { updatePassword } from "@/app/actions/auth";
 
 const ERRORS: Record<string, string> = {
-  "weak-password": "Le mot de passe doit contenir au moins 6 caractères.",
+  "weak-password": "Le mot de passe doit contenir au moins 8 caractères.",
   "password-mismatch": "Les mots de passe ne correspondent pas.",
 };
 
@@ -52,10 +52,10 @@ export default async function ResetPasswordPage({
               name="password"
               type="password"
               required
-              minLength={6}
+              minLength={8}
               autoComplete="new-password"
               className={field}
-              placeholder="Au moins 6 caractères"
+              placeholder="Au moins 8 caractères"
             />
           </label>
 
@@ -67,7 +67,7 @@ export default async function ResetPasswordPage({
               name="passwordConfirm"
               type="password"
               required
-              minLength={6}
+              minLength={8}
               autoComplete="new-password"
               className={field}
               placeholder="Retapez le mot de passe"

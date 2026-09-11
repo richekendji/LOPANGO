@@ -6,6 +6,7 @@ const ERRORS: Record<string, string> = {
   "invalid-email": "Adresse email invalide.",
   "invalid-phone": "Numéro invalide. Format : 06 ou 05 + 123 45 67.",
   config: "Configuration serveur incomplète.",
+  "rate-limit": "Trop de tentatives. Réessayez plus tard.",
 };
 
 export default async function ForgotPasswordPage({
@@ -32,8 +33,9 @@ export default async function ForgotPasswordPage({
             Mot de passe oublié
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
-            Indiquez votre numéro de compte, puis l&apos;email où recevoir le
-            lien de réinitialisation.
+            Indiquez votre numéro et l&apos;email de récupération enregistré à
+            la création du compte. Le lien n&apos;est envoyé que si les deux
+            correspondent.
           </p>
         </div>
 
@@ -46,7 +48,7 @@ export default async function ForgotPasswordPage({
 
         {params.error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {ERRORS[params.error] ?? params.error}
+            {ERRORS[params.error] ?? "Une erreur est survenue."}
           </div>
         )}
 
@@ -58,7 +60,7 @@ export default async function ForgotPasswordPage({
 
           <label className="block space-y-1">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-              Email où recevoir le lien
+              Email de récupération
             </span>
             <input
               name="email"
