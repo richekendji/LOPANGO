@@ -7,7 +7,7 @@ export function LandingFooter() {
     <footer className="rounded-t-[2rem] bg-zinc-900 px-4 pb-10 pt-14 text-white sm:rounded-t-[3rem] sm:px-6">
       <div className="mx-auto grid max-w-6xl gap-10 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <BrandLogo withTagline size="lg" className="text-white" />
+          <BrandLogo size="lg" className="overflow-hidden rounded-2xl bg-white" />
           <p className="mt-3 max-w-xs text-sm text-zinc-400">
             Location de maisons au Congo — contact direct, zéro démarcheur.
           </p>

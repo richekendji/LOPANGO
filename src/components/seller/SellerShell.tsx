@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { LogoMark } from "@/components/brand/LogoMark";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Icon } from "@/components/Icon";
 import { InstantTabLink, useInstantNav } from "@/components/InstantNav";
 import { hasActiveSubscription, refreshSubscriptionStatus, subscribeStore } from "@/lib/mock/store";
@@ -112,13 +112,7 @@ export function SellerShell({
               ←
             </Link>
           ) : (
-            <Link
-              href="/app"
-              prefetch
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-white active:opacity-70"
-            >
-              <LogoMark className="h-5 w-5" />
-            </Link>
+            <BrandLogo href="/app" size="sm" />
           )}
           <div className="min-w-0 flex-1 text-center">
             <p className="truncate text-[15px] font-bold">

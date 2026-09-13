@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-full bg-[#f5f5f5]">
       <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-10">
         <div className="text-center">
-          <BrandLogo stacked withTagline size="lg" className="text-zinc-900" />
+          <BrandLogo size="lg" className="mx-auto" />
           <h1 className="mt-4 text-2xl font-bold text-zinc-900">
             Mot de passe oublié
           </h1>

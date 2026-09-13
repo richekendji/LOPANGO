@@ -95,7 +95,7 @@ export function FeedHeader() {
   return (
     <header className="sticky top-0 z-40 bg-[#f5f5f5]/95 px-4 pb-2.5 pt-3 backdrop-blur">
       <div className="mx-auto flex max-w-lg items-center justify-center">
-        <BrandLogo href="/app" size="sm" className="text-zinc-900" />
+        <BrandLogo href="/app" size="sm" />
       </div>
     </header>
   );

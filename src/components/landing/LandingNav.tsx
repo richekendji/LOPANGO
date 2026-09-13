@@ -33,10 +33,8 @@ export function LandingNav() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <BrandLogo
           size="sm"
-          className={[
-            "transition-colors",
-            solid ? "text-zinc-900" : "text-white",
-          ].join(" ")}
+          priority
+          className="overflow-hidden rounded-xl bg-white shadow-sm"
         />
 
         <nav className="hidden items-center gap-6 md:flex">

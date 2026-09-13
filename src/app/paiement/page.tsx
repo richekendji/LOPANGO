@@ -226,13 +226,7 @@ function PaiementContent() {
         </header>
 
         <div className="flex flex-col items-center text-center">
-          <BrandLogo
-            href={false}
-            stacked
-            withTagline
-            size="md"
-            className="mb-4 text-zinc-900"
-          />
+          <BrandLogo href={false} size="lg" className="mb-4" />
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-[12px] font-semibold text-zinc-700 shadow-sm">
             Choisis ton expérience Lopango
           </span>

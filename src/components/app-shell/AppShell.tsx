@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
-import { LogoMark } from "@/components/brand/LogoMark";
 import { NAV_ITEMS } from "@/lib/mock/dashboard";
 import { Icon } from "@/components/Icon";
 
@@ -40,15 +39,9 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 function Brand() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-3 px-4 py-5">
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-white">
-        <LogoMark className="h-5 w-5" />
-      </span>
-      <div className="leading-tight">
-        <p className="text-sm font-bold tracking-tight text-zinc-900">LOPANGO</p>
-        <p className="text-xs text-zinc-500">Louer est facile</p>
-      </div>
-    </Link>
+    <div className="px-4 py-4">
+      <BrandLogo href="/dashboard" size="md" />
+    </div>
   );
 }
 
@@ -80,11 +73,7 @@ export function AppShellHeader({ onMenu }: { onMenu: () => void }) {
         >
           <Icon name="menu" />
         </button>
-        <BrandLogo
-          href="/dashboard"
-          size="sm"
-          className="text-zinc-900 lg:hidden"
-        />
+        <BrandLogo href="/dashboard" size="sm" className="lg:hidden" />
       </div>
 
       <button
