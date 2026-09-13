@@ -1,0 +1,200 @@
+import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { normalizePhone } from "@/lib/phone";
+
+/** Compte admin LOPANGO — 06 616 49 98 */
+export const ADMIN_PHONE = "066164998";
+
+export type AdminUserRow = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  phone: string | null;
+  email: string | null;
+  role: string | null;
+  createdAt: string | null;
+  paid: boolean;
+  expiresAt: string | null;
+  startsAt: string | null;
+  amount: number | null;
+  paymentMethod: string | null;
+  transactionId: string | null;
+};
+
+function adminPhones(): Set<string> {
+  const extra = (process.env.ADMIN_PHONES ?? "")
+    .split(",")
+    .map((p) => normalizePhone(p.trim()))
+    .filter((p): p is string => Boolean(p));
+  return new Set([ADMIN_PHONE, ...extra]);
+}
+
+export function isAdminPhone(phone: string | null | undefined): boolean {
+  const n = phone ? normalizePhone(phone) : null;
+  return Boolean(n && adminPhones().has(n));
+}
+
+/** Après connexion / inscription : même flux, destination selon le numéro. */
+export function postLoginPath(phone: string | null | undefined): string {
+  return isAdminPhone(phone) ? "/admin" : "/app";
+}
+
+export async function currentUserHomePath(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("phone")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const metaPhone =
+    typeof user.user_metadata?.phone === "string"
+      ? user.user_metadata.phone
+      : null;
+
+  return postLoginPath(profile?.phone ?? metaPhone);
+}
+
+function splitName(fullName: string | null | undefined) {
+  const parts = (fullName ?? "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { firstName: "—", lastName: "" };
+  if (parts.length === 1) return { firstName: parts[0], lastName: "" };
+  return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+}
+
+function isPaidRow(sub: {
+  status?: string | null;
+  expires_at?: string | null;
+} | null) {
+  if (!sub || sub.status !== "active" || !sub.expires_at) return false;
+  return new Date(sub.expires_at).getTime() > Date.now();
+}
+
+export async function requireAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login?next=/admin");
+  }
+
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("phone")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const metaPhone =
+    typeof user.user_metadata?.phone === "string"
+      ? user.user_metadata.phone
+      : null;
+
+  if (!isAdminPhone(profile?.phone) && !isAdminPhone(metaPhone)) {
+    redirect("/app");
+  }
+
+  return { user, profilePhone: profile?.phone ?? metaPhone ?? null };
+}
+
+async function authCreatedAtMap() {
+  const admin = createAdminClient();
+  const map = new Map<string, string>();
+  let page = 1;
+  for (;;) {
+    const { data, error } = await admin.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
+    if (error) break;
+    for (const u of data.users) {
+      if (u.created_at) map.set(u.id, u.created_at);
+    }
+    if (data.users.length < 200) break;
+    page += 1;
+  }
+  return map;
+}
+
+export async function getAdminUsers(): Promise<AdminUserRow[]> {
+  const admin = createAdminClient();
+  const [{ data: profiles }, { data: subs }, created] = await Promise.all([
+    admin
+      .from("profiles")
+      .select("id, email, full_name, phone, role")
+      .order("full_name", { ascending: true }),
+    admin
+      .from("subscriptions")
+      .select(
+        "user_id, status, expires_at, starts_at, amount, payment_method, transaction_id",
+      ),
+    authCreatedAtMap(),
+  ]);
+
+  const subByUser = new Map<
+    string,
+    {
+      status: string | null;
+      expires_at: string | null;
+      starts_at: string | null;
+      amount: number | null;
+      payment_method: string | null;
+      transaction_id: string | null;
+    }
+  >();
+
+  for (const s of subs ?? []) {
+    const current = subByUser.get(s.user_id);
+    const nextExp = s.expires_at ? new Date(s.expires_at).getTime() : 0;
+    const curExp = current?.expires_at
+      ? new Date(current.expires_at).getTime()
+      : 0;
+    if (!current || nextExp >= curExp) {
+      subByUser.set(s.user_id, s);
+    }
+  }
+
+  return (profiles ?? []).map((p) => {
+    const names = splitName(p.full_name);
+    const sub = subByUser.get(p.id) ?? null;
+    return {
+      id: p.id,
+      firstName: names.firstName,
+      lastName: names.lastName,
+      fullName: p.full_name?.trim() || `${names.firstName} ${names.lastName}`.trim(),
+      phone: p.phone,
+      email: p.email,
+      role: p.role,
+      createdAt: created.get(p.id) ?? null,
+      paid: isPaidRow(sub),
+      expiresAt: sub?.expires_at ?? null,
+      startsAt: sub?.starts_at ?? null,
+      amount: sub?.amount ?? null,
+      paymentMethod: sub?.payment_method ?? null,
+      transactionId: sub?.transaction_id ?? null,
+    };
+  });
+}
+
+export async function getAdminUser(id: string): Promise<AdminUserRow | null> {
+  const users = await getAdminUsers();
+  return users.find((u) => u.id === id) ?? null;
+}
+
+export function adminStats(users: AdminUserRow[]) {
+  const paid = users.filter((u) => u.paid).length;
+  return {
+    total: users.length,
+    paid,
+    unpaid: users.length - paid,
+  };
+}

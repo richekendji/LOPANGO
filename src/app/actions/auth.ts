@@ -10,6 +10,7 @@ import {
   phoneToAuthEmail,
 } from "@/lib/phone";
 import { redirect } from "next/navigation";
+import { postLoginPath } from "@/lib/admin";
 import { rateLimit } from "@/lib/rate-limit";
 
 const MIN_PASSWORD = 8;
@@ -124,7 +125,7 @@ export async function signUp(formData: FormData) {
     loginError("bad-credentials");
   }
 
-  redirect("/app");
+  redirect(postLoginPath(phone));
 }
 
 export async function signIn(formData: FormData) {
@@ -174,7 +175,7 @@ export async function signIn(formData: FormData) {
     loginError("bad-credentials");
   }
 
-  redirect("/app");
+  redirect(postLoginPath(phone));
 }
 
 export async function signOut() {
@@ -262,5 +263,12 @@ export async function updatePassword(formData: FormData) {
     redirect("/reset-password?error=update-failed");
   }
 
-  redirect("/app");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const metaPhone =
+    typeof user?.user_metadata?.phone === "string"
+      ? user.user_metadata.phone
+      : null;
+  redirect(postLoginPath(metaPhone));
 }

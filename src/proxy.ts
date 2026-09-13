@@ -58,5 +58,7 @@ export const config = {
     "/api/payments/:path*",
     "/api/videos/:path*",
     "/api/subscription/:path*",
+    "/admin",
+    "/admin/:path*",
   ],
 };

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { signIn } from "@/app/actions/auth";
 import { AuthBackLink } from "@/components/AuthBackLink";
@@ -7,6 +8,7 @@ import { AuthQueryAlert } from "@/components/AuthQueryAlert";
 import { PasswordField } from "@/components/PasswordField";
 import { PhoneInput } from "@/components/PhoneInput";
 import { SubmitButton } from "@/components/SubmitButton";
+import { currentUserHomePath } from "@/lib/admin";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -24,7 +26,10 @@ const ERRORS: Record<string, string> = {
   "rate-limit": "Trop de tentatives. Réessayez plus tard.",
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const home = await currentUserHomePath();
+  if (home) redirect(home);
+
   return (
     <div className="min-h-full bg-[#f5f5f5]">
       <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-10">

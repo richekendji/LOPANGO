@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthAccountCard, ProfileSignOut } from "@/components/AuthAccountCard";
+import { AdminEntryLink } from "@/components/admin/AdminEntryLink";
 import { ProfileClient } from "./ProfileClient";
 import { pageMetadata } from "@/lib/seo";
 
@@ -16,6 +17,7 @@ export default function ProfilePage() {
       <p className="mt-1 text-sm text-zinc-500">Vos informations LOPANGO</p>
       <AuthAccountCard />
       <ProfileClient />
+      <AdminEntryLink />
       <ProfileSignOut />
     </div>
   );
