@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { signUp } from "@/app/actions/auth";
 import { AuthBackLink } from "@/components/AuthBackLink";
+import { AuthQueryAlert } from "@/components/AuthQueryAlert";
 import { PasswordField } from "@/components/PasswordField";
 import { PhoneInput } from "@/components/PhoneInput";
+import { SubmitButton } from "@/components/SubmitButton";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -26,14 +29,7 @@ const ERRORS: Record<string, string> = {
   "signup-failed": "Création du compte impossible. Réessayez.",
 };
 
-export default async function RegisterPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const params = await searchParams;
-  const error = params.error;
-
+export default function RegisterPage() {
   const field =
     "w-full rounded-2xl border border-[#ebebeb] bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-400";
 
@@ -56,11 +52,9 @@ export default async function RegisterPage({
           </p>
         </div>
 
-        {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {ERRORS[error] ?? "Une erreur est survenue."}
-          </div>
-        )}
+        <Suspense>
+          <AuthQueryAlert errors={ERRORS} />
+        </Suspense>
 
         <form
           action={signUp}
@@ -130,18 +124,14 @@ export default async function RegisterPage({
             placeholder="Retapez le mot de passe"
           />
 
-          <button
-            type="submit"
-            className="rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white hover:bg-zinc-800"
-          >
-            Créer mon compte
-          </button>
+          <SubmitButton pendingLabel="Création…">Créer mon compte</SubmitButton>
         </form>
 
         <p className="text-center text-sm text-zinc-500">
           Déjà un compte ?{" "}
           <Link
             href="/login"
+            prefetch
             className="font-semibold text-zinc-900 underline-offset-2 hover:underline"
           >
             Se connecter

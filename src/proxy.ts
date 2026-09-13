@@ -1,37 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Routes accessibles sans session. */
-const PUBLIC_PREFIXES = [
-  "/",
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/auth/callback",
-  "/api/webhooks/",
-];
-
-function isPublicPath(pathname: string): boolean {
-  if (pathname === "/") return true;
-  return PUBLIC_PREFIXES.some((p) => {
-    if (p === "/") return false;
-    return pathname === p || pathname.startsWith(p.endsWith("/") ? p : `${p}/`);
-  });
-}
-
-function isProtectedPath(pathname: string): boolean {
-  return (
-    pathname.startsWith("/app") ||
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/paiement") ||
-    pathname.startsWith("/houses") ||
-    pathname.startsWith("/api/payments") ||
-    pathname.startsWith("/api/videos") ||
-    pathname.startsWith("/api/subscription")
-  );
-}
-
+/**
+ * Auth uniquement sur les routes protégées.
+ * Landing / login / register ne passent plus par getUser() — ça évitait
+ * un aller-retour Supabase à chaque clic (souvent plusieurs secondes).
+ */
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -62,11 +36,11 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (!user && isProtectedPath(pathname) && !isPublicPath(pathname)) {
-    const url = request.nextUrl.clone();
+  if (!user) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
     }
+    const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
@@ -77,6 +51,12 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/app/:path*",
+    "/dashboard/:path*",
+    "/paiement/:path*",
+    "/houses/:path*",
+    "/api/payments/:path*",
+    "/api/videos/:path*",
+    "/api/subscription/:path*",
   ],
 };

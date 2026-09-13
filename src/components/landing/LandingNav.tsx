@@ -58,6 +58,7 @@ export function LandingNav() {
         <div className="flex items-center gap-2">
           <Link
             href="/login"
+            prefetch
             className={[
               "rounded-full px-3 py-2 text-sm font-semibold transition-transform hover:-translate-y-px",
               solid ? "text-zinc-700 hover:bg-zinc-100" : "text-white/90 hover:bg-white/10",

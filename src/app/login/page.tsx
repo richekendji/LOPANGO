@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { signIn } from "@/app/actions/auth";
 import { AuthBackLink } from "@/components/AuthBackLink";
+import { AuthQueryAlert } from "@/components/AuthQueryAlert";
 import { PasswordField } from "@/components/PasswordField";
 import { PhoneInput } from "@/components/PhoneInput";
+import { SubmitButton } from "@/components/SubmitButton";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -18,15 +21,10 @@ const ERRORS: Record<string, string> = {
   "invalid-phone": "Numéro invalide. Format : 06 ou 05 + 123 45 67.",
   "bad-credentials": "Numéro ou mot de passe incorrect.",
   "reset-link-invalid": "Lien de réinitialisation invalide ou expiré.",
+  "rate-limit": "Trop de tentatives. Réessayez plus tard.",
 };
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const params = await searchParams;
-
+export default function LoginPage() {
   return (
     <div className="min-h-full bg-[#f5f5f5]">
       <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-10">
@@ -44,11 +42,9 @@ export default async function LoginPage({
           </p>
         </div>
 
-        {params.error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {ERRORS[params.error] ?? "Une erreur est survenue."}
-          </div>
-        )}
+        <Suspense>
+          <AuthQueryAlert errors={ERRORS} />
+        </Suspense>
 
         <form
           action={signIn}
@@ -66,24 +62,21 @@ export default async function LoginPage({
           <div className="text-right">
             <Link
               href="/forgot-password"
+              prefetch
               className="text-sm font-semibold text-zinc-700 underline-offset-2 hover:underline"
             >
               Mot de passe oublié ?
             </Link>
           </div>
 
-          <button
-            type="submit"
-            className="rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white hover:bg-zinc-800"
-          >
-            Se connecter
-          </button>
+          <SubmitButton pendingLabel="Connexion…">Se connecter</SubmitButton>
         </form>
 
         <p className="text-center text-sm text-zinc-500">
           Pas encore de compte ?{" "}
           <Link
             href="/register"
+            prefetch
             className="font-semibold text-zinc-900 underline-offset-2 hover:underline"
           >
             S&apos;inscrire

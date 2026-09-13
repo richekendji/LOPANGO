@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { requestPasswordReset } from "@/app/actions/auth";
+import { AuthQueryAlert } from "@/components/AuthQueryAlert";
 import { PhoneInput } from "@/components/PhoneInput";
+import { SubmitButton } from "@/components/SubmitButton";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -18,13 +21,7 @@ const ERRORS: Record<string, string> = {
   "rate-limit": "Trop de tentatives. Réessayez plus tard.",
 };
 
-export default async function ForgotPasswordPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string; sent?: string }>;
-}) {
-  const params = await searchParams;
-
+export default function ForgotPasswordPage() {
   const field =
     "w-full rounded-2xl border border-[#ebebeb] bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-400";
 
@@ -48,18 +45,13 @@ export default async function ForgotPasswordPage({
           </p>
         </div>
 
-        {params.sent && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-            Si un compte correspond, un message a été envoyé à cet email.
-            Ouvrez-le pour choisir un nouveau mot de passe.
-          </div>
-        )}
-
-        {params.error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {ERRORS[params.error] ?? "Une erreur est survenue."}
-          </div>
-        )}
+        <Suspense>
+          <AuthQueryAlert
+            errors={ERRORS}
+            successKey="sent"
+            successText="Si un compte correspond, un message a été envoyé à cet email. Ouvrez-le pour choisir un nouveau mot de passe."
+          />
+        </Suspense>
 
         <form
           action={requestPasswordReset}
@@ -81,17 +73,13 @@ export default async function ForgotPasswordPage({
             />
           </label>
 
-          <button
-            type="submit"
-            className="rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white hover:bg-zinc-800"
-          >
-            Envoyer le lien
-          </button>
+          <SubmitButton pendingLabel="Envoi…">Envoyer le lien</SubmitButton>
         </form>
 
         <p className="text-center text-sm text-zinc-500">
           <Link
             href="/login"
+            prefetch
             className="font-semibold text-zinc-900 underline-offset-2 hover:underline"
           >
             Retour à la connexion

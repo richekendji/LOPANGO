@@ -9,7 +9,6 @@ import {
   normalizePhone,
   phoneToAuthEmail,
 } from "@/lib/phone";
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -131,7 +130,6 @@ export async function signUp(formData: FormData) {
     loginError("bad-credentials");
   }
 
-  revalidatePath("/", "layout");
   redirect("/app");
 }
 
@@ -153,47 +151,41 @@ export async function signIn(formData: FormData) {
     loginError("rate-limit");
   }
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    loginError("config");
-  }
-
-  const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("id, email")
-    .eq("phone", phone)
-    .maybeSingle();
-
-  if (!profile) {
-    loginError("bad-credentials");
-  }
-
-  let email = (profile.email as string | null) || null;
-  if (!email || email.endsWith("@lopango.local")) {
-    email = phoneToAuthEmail(phone);
-  }
-
-  const { data: userData } = await admin.auth.admin.getUserById(profile.id);
-  const authEmail = userData.user?.email || email;
-
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
-    email: authEmail,
+  const primaryEmail = phoneToAuthEmail(phone);
+  let { error } = await supabase.auth.signInWithPassword({
+    email: primaryEmail,
     password,
   });
+
+  // Comptes dont l’email auth a été basculé vers l’email de récupération
+  if (error && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("email")
+      .eq("phone", phone)
+      .maybeSingle();
+    const recovery = profile?.email ? normalizeEmail(profile.email) : null;
+    if (recovery && recovery !== primaryEmail && isValidEmail(recovery)) {
+      const retry = await supabase.auth.signInWithPassword({
+        email: recovery,
+        password,
+      });
+      error = retry.error;
+    }
+  }
 
   if (error) {
     loginError("bad-credentials");
   }
 
-  revalidatePath("/", "layout");
   redirect("/app");
 }
 
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  revalidatePath("/", "layout");
   redirect("/");
 }
 
@@ -276,6 +268,5 @@ export async function updatePassword(formData: FormData) {
     redirect("/reset-password?error=update-failed");
   }
 
-  revalidatePath("/", "layout");
   redirect("/app");
 }

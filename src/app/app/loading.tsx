@@ -1,6 +1,6 @@
-export default function Loading() {
+export default function AppLoading() {
   return (
-    <div className="flex min-h-[30vh] items-center justify-center px-4 text-sm text-zinc-400">
+    <div className="flex min-h-[40vh] items-center justify-center text-sm text-zinc-500">
       Chargement…
     </div>
   );

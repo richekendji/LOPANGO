@@ -15,6 +15,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: ["gsap"],
+  },
   images: {
     remotePatterns: [
       {

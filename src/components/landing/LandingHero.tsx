@@ -28,7 +28,7 @@ export function LandingHero() {
       className="relative isolate flex min-h-[100dvh] items-end overflow-hidden"
     >
       <Image
-        src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=2400&q=80"
+        src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1400&q=70"
         alt="Maison contemporaine à louer — ambiance LOPANGO"
         fill
         priority
@@ -57,8 +57,8 @@ export function LandingHero() {
           </p>
         </div>
 
-        {/* Bloc texte */}
-        <div className="hero-anim max-w-lg rounded-2xl bg-white/95 p-5 shadow-xl backdrop-blur-sm sm:p-6">
+        {/* Bloc texte — pas d’anim GSAP pour que les CTA restent cliquables tout de suite */}
+        <div className="max-w-lg rounded-2xl bg-white/95 p-5 shadow-xl backdrop-blur-sm sm:p-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e11d48]">
             Sans démarcheurs
           </p>
