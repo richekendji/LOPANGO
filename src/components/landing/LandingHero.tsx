@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { BrandLogo } from "@/components/brand/BrandLogo";
 import { MagneticLink } from "./MagneticLink";
 
 export function LandingHero() {
@@ -60,12 +59,6 @@ export function LandingHero() {
 
         {/* Bloc texte — pas d’anim GSAP pour que les CTA restent cliquables tout de suite */}
         <div className="max-w-lg rounded-2xl bg-white/95 p-5 shadow-xl backdrop-blur-sm sm:p-6">
-          <BrandLogo
-            href={false}
-            size="hero"
-            priority
-            className="mx-auto mb-3"
-          />
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e11d48]">
             Sans démarcheurs
           </p>
