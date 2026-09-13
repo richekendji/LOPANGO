@@ -11,8 +11,7 @@ export function LandingPricing() {
           Un abonnement. Tout le Congo.
         </h2>
         <p className="mx-auto mt-3 max-w-lg text-sm text-zinc-500">
-          Débloque les contacts, les détails et la publication — Mobile Money via
-          SebPay.
+          Débloque les contacts, les détails et la publication — Mobile Money.
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2">

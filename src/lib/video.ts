@@ -134,7 +134,7 @@ function uploadWithProgress(
     xhr.upload.onprogress = (e) => {
       if (!e.lengthComputable) return;
       const pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
-      onProgress?.(`Envoi vers Cloudflare R2… ${pct}%`);
+      onProgress?.(`Envoi de la vidéo… ${pct}%`);
     };
 
     xhr.onload = () => {
@@ -144,12 +144,12 @@ function uploadWithProgress(
       }
       reject(
         new Error(
-          `Échec upload R2 (${xhr.status}). Vérifie CORS du bucket et les clés.`,
+          "L’envoi de la vidéo a échoué. Réessaie.",
         ),
       );
     };
     xhr.onerror = () =>
-      reject(new Error("Erreur réseau pendant l’upload R2."));
+      reject(new Error("Erreur réseau pendant l’envoi de la vidéo."));
     xhr.send(file);
   });
 }
@@ -202,10 +202,10 @@ export async function compressAndStoreVideo(
   };
 
   if (!res.ok || !data.ok || !data.uploadUrl || !data.publicUrl) {
-    throw new Error(data.error || "Impossible de préparer l’upload R2.");
+    throw new Error(data.error || "Impossible de préparer l’envoi de la vidéo.");
   }
 
   await uploadWithProgress(data.uploadUrl, file, onProgress);
-  onProgress?.("Vidéo enregistrée sur Cloudflare.");
+  onProgress?.("Vidéo enregistrée.");
   return data.publicUrl;
 }

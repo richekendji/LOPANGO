@@ -46,7 +46,6 @@ export async function ensureR2Cors() {
     site,
     "https://lopango.site",
     "https://www.lopango.site",
-    "https://lopango-lovat.vercel.app",
   ].filter(Boolean);
   const unique = Array.from(new Set(origins));
 

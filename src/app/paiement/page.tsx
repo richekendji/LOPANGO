@@ -16,7 +16,6 @@ import {
   savePaiementPeriod,
   setSubscriptionActive,
 } from "@/lib/mock/store";
-import { BrandLogo } from "@/components/brand/BrandLogo";
 import { SelectField } from "@/components/SelectField";
 
 const ARGUMENTS_LOCATAIRE = [
@@ -31,14 +30,15 @@ const ARGUMENTS_LOCATAIRE = [
 ];
 
 const ARGUMENTS_PUBLIER = [
-  "Publie les photos de ta maison et touche des locataires partout au Congo",
-  "Reçois vite des clients intéressés — directement dans Messages",
-  "Tes annonces visibles dans le feed LOPANGO (Brazzaville, Pointe-Noire…)",
-  "Les locataires te contactent sans démarcheur ni frais cachés",
-  "Tu gardes la main : tu parles et tu t’arranges avec eux",
-  "Mets en avant tes caractéristiques (chambres, cuisine, parking…)",
-  "Un seul abonnement pour publier et gérer tes maisons",
-  "Toi seul décides. Toi seul choisis.",
+  "Tu publies toi-même = tu te protèges — un bien que tu contrôles, c’est un bien que l’État n’a aucune raison de toucher",
+  "Ton bien reste le tien — personne ne le filme, personne ne réclame des frais à ta place",
+  "Plus de démarcheurs. Plus de risques. Ton nom sur ton bien. Ta maison debout.",
+  "Des locataires sérieux te contactent directement — zéro intermédiaire, zéro commission",
+  "Visible partout au Congo — Brazzaville, Pointe-Noire, et au-delà",
+  "Ils t’écrivent. Tu réponds. Vous vous arrangez. C’est tout.",
+  "Tu restes maître chez toi — tu choisis qui visite, qui loue, à quel prix",
+  "Présente tout ce qui fait la valeur — chambres, cuisine, parking, clôture…",
+  "Un seul abonnement pour publier, gérer et protéger tous tes biens",
 ];
 
 function buildReturnUrl(retour: string) {
@@ -213,8 +213,8 @@ function PaiementContent() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] text-zinc-900">
-      <div className="mx-auto max-w-lg px-4 pb-12 pt-3">
-        <header className="relative mb-5 flex items-center justify-center">
+      <div className="mx-auto max-w-lg px-4 pb-12 pt-2">
+        <header className="relative mb-3 flex items-center justify-center">
           <Link
             href={backHref}
             aria-label="Retour"
@@ -222,20 +222,28 @@ function PaiementContent() {
           >
             ‹
           </Link>
-          <h1 className="text-[15px] font-bold text-zinc-900">Abonnements</h1>
+          <h1 className="text-[15px] font-bold text-zinc-900">
+            {isPublier ? "Publication" : "Abonnements"}
+          </h1>
         </header>
 
         <div className="flex flex-col items-center text-center">
-          <BrandLogo href={false} size="lg" className="mb-4" />
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-[12px] font-semibold text-zinc-700 shadow-sm">
-            Choisis ton expérience Lopango
-          </span>
-          <h2 className="mt-4 text-[26px] font-bold leading-tight tracking-tight text-zinc-900">
-            Abonnements Lopango
-          </h2>
-          <p className="mt-2 max-w-sm text-[13px] leading-snug text-zinc-500">
+          <h2
+            className={`text-[26px] font-bold leading-tight tracking-tight ${
+              isPublier ? "text-[#e11d48]" : "text-zinc-900"
+            }`}
+          >
             {isPublier
-              ? "Tu veux publier ta maison dans tout le Congo ? Lopango change tout."
+              ? "Frais de publication de propriété"
+              : "Abonnements Lopango"}
+          </h2>
+          <p
+            className={`mt-2 max-w-sm text-[13px] leading-snug ${
+              isPublier ? "text-[#e11d48]/80" : "text-zinc-500"
+            }`}
+          >
+            {isPublier
+              ? "L’État démolira ta maison. Pas parce qu’elle est illégale parce qu’un démarcheur l’a filmée et réclame des frais de visite. C’est ta maison qu’ils cassent. Pas lui. Publie-la toi-même sur Lopango. Avant qu’il le fasse."
               : "Tu cherches une maison dans tout le Congo ? Lopango change tout."}
           </p>
         </div>
@@ -273,7 +281,7 @@ function PaiementContent() {
               </p>
               <p className="mt-1.5 text-[13px] text-zinc-500">
                 {isPublier
-                  ? "Publie tes photos et trouve des locataires partout au Congo"
+                  ? "Sécurise ton bien avant qu’un démarcheur le détruise."
                   : "Débloque les infos propriétaires partout au Congo"}
               </p>
             </div>
@@ -291,24 +299,30 @@ function PaiementContent() {
               </p>
             )}
 
-            <ul className="mt-5 space-y-3">
+            <ul className={`mt-5 ${isPublier ? "space-y-4" : "space-y-3"}`}>
               {argumentsList.map((item) => (
                 <li key={item} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-bold text-white">
+                  <span
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                      isPublier ? "bg-[#e11d48]" : "bg-zinc-900"
+                    }`}
+                  >
                     ✓
                   </span>
-                  <span className="text-[13px] leading-snug text-zinc-700">
+                  <span
+                    className={
+                      isPublier
+                        ? "text-[14px] font-semibold leading-relaxed tracking-[-0.01em] text-zinc-900"
+                        : "text-[13px] leading-snug text-zinc-700"
+                    }
+                  >
                     {item}
                   </span>
                 </li>
               ))}
             </ul>
 
-            {/* Mobile Money */}
-            <div className="mt-6 space-y-3 border-t border-[#ebebeb] pt-4">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">
-                Paiement Mobile Money (SebPay)
-              </p>
+            <div className="mt-4 space-y-3 border-t border-[#ebebeb] pt-3">
               <label className="block space-y-1">
                 <span className="text-xs font-semibold text-zinc-500">
                   Opérateur
@@ -387,15 +401,17 @@ function PaiementContent() {
                 ? "Confirmation en cours…"
                 : paying
                   ? "Envoi du paiement…"
-                  : period === "mensuel"
-                    ? `Débloquer pour ${formatFcfa(PRICE_MENSUEL)} le mois`
-                    : `Débloquer pour ${formatFcfa(PRICE_ANNUEL)} l’an`}
+                  : isPublier
+                    ? `Je publie et protège pour ${formatFcfa(price)}`
+                    : period === "mensuel"
+                      ? `Débloquer pour ${formatFcfa(PRICE_MENSUEL)} le mois`
+                      : `Débloquer pour ${formatFcfa(PRICE_ANNUEL)} l’an`}
             </button>
 
             <p className="mt-3 text-center text-[11px] leading-snug text-zinc-400">
               {process.env.NODE_ENV === "development"
-                ? "Mode local : le paiement s’active immédiatement (sans SebPay)."
-                : "Paiement sécurisé via SebPay · Congo (XAF)"}
+                ? "Mode local : le paiement s’active immédiatement."
+                : "Paiement sécurisé par Mobile Money · Congo"}
             </p>
           </div>
         </div>

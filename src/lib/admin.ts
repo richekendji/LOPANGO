@@ -3,9 +3,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { normalizePhone } from "@/lib/phone";
 
-/** Compte admin LOPANGO — 06 616 49 98 */
-export const ADMIN_PHONE = "066164998";
-
 export type AdminUserRow = {
   id: string;
   firstName: string;
@@ -21,11 +18,12 @@ export type AdminUserRow = {
 };
 
 function adminPhones(): Set<string> {
-  const extra = (process.env.ADMIN_PHONES ?? "")
-    .split(",")
-    .map((p) => normalizePhone(p.trim()))
-    .filter((p): p is string => Boolean(p));
-  return new Set([ADMIN_PHONE, ...extra]);
+  return new Set(
+    (process.env.ADMIN_PHONES ?? "")
+      .split(",")
+      .map((p) => normalizePhone(p.trim()))
+      .filter((p): p is string => Boolean(p)),
+  );
 }
 
 export function isAdminPhone(phone: string | null | undefined): boolean {
@@ -39,25 +37,32 @@ export function postLoginPath(phone: string | null | undefined): string {
 }
 
 export async function currentUserHomePath(): Promise<string | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
 
-  const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("phone")
-    .eq("id", user.id)
-    .maybeSingle();
+    const metaPhone =
+      typeof user.user_metadata?.phone === "string"
+        ? user.user_metadata.phone
+        : null;
 
-  const metaPhone =
-    typeof user.user_metadata?.phone === "string"
-      ? user.user_metadata.phone
-      : null;
-
-  return postLoginPath(profile?.phone ?? metaPhone);
+    try {
+      const admin = createAdminClient();
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("phone")
+        .eq("id", user.id)
+        .maybeSingle();
+      return postLoginPath(profile?.phone ?? metaPhone);
+    } catch {
+      return postLoginPath(metaPhone);
+    }
+  } catch {
+    return null;
+  }
 }
 
 function isPaidRow(sub: {
@@ -84,23 +89,30 @@ export async function requireAdmin() {
     redirect("/login?next=/admin");
   }
 
-  const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("phone")
-    .eq("id", user.id)
-    .maybeSingle();
-
   const metaPhone =
     typeof user.user_metadata?.phone === "string"
       ? user.user_metadata.phone
       : null;
 
-  if (!isAdminPhone(profile?.phone) && !isAdminPhone(metaPhone)) {
-    redirect("/app");
-  }
+  try {
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("phone")
+      .eq("id", user.id)
+      .maybeSingle();
 
-  return { user, profilePhone: profile?.phone ?? metaPhone ?? null };
+    if (!isAdminPhone(profile?.phone) && !isAdminPhone(metaPhone)) {
+      redirect("/app");
+    }
+
+    return { user, profilePhone: profile?.phone ?? metaPhone ?? null };
+  } catch {
+    if (!isAdminPhone(metaPhone)) {
+      redirect("/app");
+    }
+    return { user, profilePhone: metaPhone };
+  }
 }
 
 async function authCreatedAtMap() {

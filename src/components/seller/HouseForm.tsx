@@ -679,8 +679,7 @@ export function HouseForm({
           />
         </div>
         <p className="mt-1 text-xs text-zinc-500">
-          Optionnel — max 2 vidéos, jusqu’à 10 min / 200 Mo, stockées sur
-          Cloudflare R2.
+          Optionnel — max 2 vidéos, jusqu’à 10 min / 200 Mo.
         </p>
         {videoLoading && (
           <p className="mt-3 text-sm text-zinc-500">

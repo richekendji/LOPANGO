@@ -51,7 +51,7 @@ function BottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#ebebeb] bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-      <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1.5">
+      <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-2">
         {TABS.map((tab) => {
           const href =
             "publish" in tab && tab.publish
@@ -76,11 +76,11 @@ function BottomNav() {
               tabKey={tab.label}
               active={active}
               onArm={arm}
-              className={`flex min-w-[3.5rem] flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 text-[10px] font-medium ${
+              className={`flex min-w-[3.5rem] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium ${
                 active ? "text-zinc-900" : "text-zinc-400"
               }`}
             >
-              <Icon name={tab.icon} className="h-5 w-5" />
+              <Icon name={tab.icon} className="h-6 w-6" />
               <span>{tab.label}</span>
             </InstantTabLink>
           );
