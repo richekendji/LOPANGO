@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { AdminUserRow } from "@/lib/admin";
 import {
+  accessLabel,
   formatAdminDate,
   formatAdminPhone,
   roleHint,
-  roleLabel,
 } from "@/lib/admin-format";
 
-type Filter = "all" | "tenant" | "owner";
+type Filter = "all" | "tenant" | "owner" | "paid" | "free";
 
 export function AdminUsersBoard({ users }: { users: AdminUserRow[] }) {
   const [q, setQ] = useState("");
@@ -21,6 +21,8 @@ export function AdminUsersBoard({ users }: { users: AdminUserRow[] }) {
     return users.filter((u) => {
       if (filter === "tenant" && u.role !== "tenant") return false;
       if (filter === "owner" && u.role !== "owner") return false;
+      if (filter === "paid" && !u.paid) return false;
+      if (filter === "free" && u.paid) return false;
       if (!query) return true;
       const hay =
         `${u.fullName} ${u.firstName} ${u.lastName} ${u.phone ?? ""}`.toLowerCase();
@@ -32,6 +34,8 @@ export function AdminUsersBoard({ users }: { users: AdminUserRow[] }) {
     { id: "all", label: "Tous" },
     { id: "tenant", label: "Locataires" },
     { id: "owner", label: "Propriétaires" },
+    { id: "paid", label: "Abonnés" },
+    { id: "free", label: "Gratuit" },
   ];
 
   return (
@@ -44,7 +48,7 @@ export function AdminUsersBoard({ users }: { users: AdminUserRow[] }) {
         className="w-full rounded-2xl border border-[#ebebeb] bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-400"
       />
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -91,12 +95,12 @@ export function AdminUsersBoard({ users }: { users: AdminUserRow[] }) {
               </div>
               <span
                 className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                  u.role === "owner"
-                    ? "bg-zinc-900 text-white"
+                  u.paid
+                    ? "bg-emerald-50 text-emerald-800"
                     : "bg-[#f5f5f5] text-zinc-600"
                 }`}
               >
-                {roleLabel(u.role)}
+                {accessLabel(u.paid)}
               </span>
             </Link>
           );

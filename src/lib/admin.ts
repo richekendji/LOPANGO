@@ -15,6 +15,9 @@ export type AdminUserRow = {
   email: string | null;
   role: string | null;
   createdAt: string | null;
+  /** Abonnement payé encore valable. Sinon : gratuit. */
+  paid: boolean;
+  expiresAt: string | null;
 };
 
 function adminPhones(): Set<string> {
@@ -55,6 +58,14 @@ export async function currentUserHomePath(): Promise<string | null> {
       : null;
 
   return postLoginPath(profile?.phone ?? metaPhone);
+}
+
+function isPaidRow(sub: {
+  status?: string | null;
+  expires_at?: string | null;
+} | null) {
+  if (!sub || sub.status !== "active" || !sub.expires_at) return false;
+  return new Date(sub.expires_at).getTime() > Date.now();
 }
 
 function splitName(fullName: string | null | undefined) {
@@ -113,16 +124,35 @@ async function authCreatedAtMap() {
 
 export async function getAdminUsers(): Promise<AdminUserRow[]> {
   const admin = createAdminClient();
-  const [{ data: profiles }, created] = await Promise.all([
+  const [{ data: profiles }, { data: subs }, created] = await Promise.all([
     admin
       .from("profiles")
       .select("id, email, full_name, phone, role")
       .order("full_name", { ascending: true }),
+    admin
+      .from("subscriptions")
+      .select("user_id, status, expires_at"),
     authCreatedAtMap(),
   ]);
 
+  const subByUser = new Map<
+    string,
+    { status: string | null; expires_at: string | null }
+  >();
+  for (const s of subs ?? []) {
+    const current = subByUser.get(s.user_id);
+    const nextExp = s.expires_at ? new Date(s.expires_at).getTime() : 0;
+    const curExp = current?.expires_at
+      ? new Date(current.expires_at).getTime()
+      : 0;
+    if (!current || nextExp >= curExp) {
+      subByUser.set(s.user_id, s);
+    }
+  }
+
   return (profiles ?? []).map((p) => {
     const names = splitName(p.full_name);
+    const sub = subByUser.get(p.id) ?? null;
     return {
       id: p.id,
       firstName: names.firstName,
@@ -133,6 +163,8 @@ export async function getAdminUsers(): Promise<AdminUserRow[]> {
       email: p.email,
       role: p.role,
       createdAt: created.get(p.id) ?? null,
+      paid: isPaidRow(sub),
+      expiresAt: sub?.expires_at ?? null,
     };
   });
 }
@@ -145,9 +177,12 @@ export async function getAdminUser(id: string): Promise<AdminUserRow | null> {
 export function adminStats(users: AdminUserRow[]) {
   const tenants = users.filter((u) => u.role === "tenant").length;
   const owners = users.filter((u) => u.role === "owner").length;
+  const paid = users.filter((u) => u.paid).length;
   return {
     total: users.length,
     tenants,
     owners,
+    paid,
+    free: users.length - paid,
   };
 }

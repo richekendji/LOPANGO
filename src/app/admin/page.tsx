@@ -17,6 +17,10 @@ export default async function AdminPage() {
 
       <div className="grid grid-cols-3 gap-2">
         <StatCard label="Comptes" value={stats.total} />
+        <StatCard label="Abonnés" value={stats.paid} tone="paid" />
+        <StatCard label="Gratuit" value={stats.free} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
         <StatCard label="Locataires" value={stats.tenants} />
         <StatCard label="Propriétaires" value={stats.owners} />
       </div>
@@ -33,10 +37,24 @@ export default async function AdminPage() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function StatCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "paid";
+}) {
   return (
     <div className="rounded-2xl bg-white px-3 py-4 text-center shadow-sm">
-      <p className="text-2xl font-black tracking-tight text-zinc-900">{value}</p>
+      <p
+        className={`text-2xl font-black tracking-tight ${
+          tone === "paid" ? "text-emerald-700" : "text-zinc-900"
+        }`}
+      >
+        {value}
+      </p>
       <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
         {label}
       </p>

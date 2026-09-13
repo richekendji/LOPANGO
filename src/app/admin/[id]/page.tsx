@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminUser } from "@/lib/admin";
 import {
+  accessLabel,
   formatAdminDateTime,
   formatAdminPhone,
   roleHint,
@@ -27,6 +28,14 @@ export default async function AdminUserPage({
     { label: "Rôle", value: roleLabel(user.role) },
     { label: "Sur LOPANGO", value: roleHint(user.role) },
     { label: "Inscription", value: formatAdminDateTime(user.createdAt) },
+    {
+      label: "Accès",
+      value: user.paid ? "Abonnement payé" : "Gratuit",
+    },
+    {
+      label: "Fin d’accès",
+      value: user.paid ? formatAdminDateTime(user.expiresAt) : "—",
+    },
   ];
 
   return (
@@ -51,15 +60,20 @@ export default async function AdminUserPage({
             <p className="font-mono text-xs text-zinc-500">
               {formatAdminPhone(user.phone)}
             </p>
-            <span
-              className={`mt-1.5 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                user.role === "owner"
-                  ? "bg-zinc-900 text-white"
-                  : "bg-[#f5f5f5] text-zinc-600"
-              }`}
-            >
-              {roleLabel(user.role)}
-            </span>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <span className="rounded-full bg-[#f5f5f5] px-2.5 py-0.5 text-[11px] font-semibold text-zinc-600">
+                {roleLabel(user.role)}
+              </span>
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                  user.paid
+                    ? "bg-emerald-50 text-emerald-800"
+                    : "bg-[#f5f5f5] text-zinc-600"
+                }`}
+              >
+                {accessLabel(user.paid)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

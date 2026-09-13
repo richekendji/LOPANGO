@@ -41,3 +41,7 @@ export function roleHint(role: string | null) {
   if (role === "tenant") return "Cherche une maison";
   return "Rôle non renseigné";
 }
+
+export function accessLabel(paid: boolean) {
+  return paid ? "Abonné" : "Gratuit";
+}
