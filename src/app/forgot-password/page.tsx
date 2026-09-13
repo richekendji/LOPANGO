@@ -1,6 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requestPasswordReset } from "@/app/actions/auth";
 import { PhoneInput } from "@/components/PhoneInput";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Mot de passe oublié",
+  description:
+    "Réinitialisez votre mot de passe LOPANGO avec votre numéro et votre email de récupération.",
+  path: "/forgot-password",
+});
 
 const ERRORS: Record<string, string> = {
   "invalid-email": "Adresse email invalide.",

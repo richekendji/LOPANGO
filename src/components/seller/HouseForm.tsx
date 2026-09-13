@@ -27,6 +27,7 @@ import {
   deleteVideoBlob,
   resolveVideoUrl,
 } from "@/lib/video";
+import { SelectField } from "@/components/SelectField";
 
 type FormState = {
   description: string;
@@ -391,8 +392,7 @@ export function HouseForm({
         <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
           Ville {req}
         </span>
-        <select
-          className={field}
+        <SelectField
           required
           value={form.city}
           onChange={(e) => update("city", e.target.value)}
@@ -402,7 +402,7 @@ export function HouseForm({
               {c}
             </option>
           ))}
-        </select>
+        </SelectField>
       </label>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -592,8 +592,7 @@ export function HouseForm({
         <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
           Type de maison {req}
         </span>
-        <select
-          className={field}
+        <SelectField
           required
           value={form.houseType}
           onChange={(e) => update("houseType", e.target.value as HouseType)}
@@ -603,7 +602,7 @@ export function HouseForm({
               {t}
             </option>
           ))}
-        </select>
+        </SelectField>
       </label>
 
       <section className="rounded-[1.5rem] bg-white p-4 shadow-sm">

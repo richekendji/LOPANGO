@@ -14,6 +14,7 @@ import {
   saveContact,
   subscribeStore,
 } from "@/lib/mock/store";
+import { SelectField } from "@/components/SelectField";
 
 export default function InboxPage() {
   const [contacts, setContacts] = useState<ContactRequest[]>([]);
@@ -110,8 +111,7 @@ export default function InboxPage() {
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
           />
-          <select
-            className={field}
+          <SelectField
             value={form.houseId}
             onChange={(e) => setForm({ ...form, houseId: e.target.value })}
             required
@@ -121,7 +121,7 @@ export default function InboxPage() {
                 {h.title}
               </option>
             ))}
-          </select>
+          </SelectField>
           <textarea
             className={`${field} min-h-24`}
             placeholder="Message"

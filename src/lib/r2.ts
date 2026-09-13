@@ -44,6 +44,8 @@ export async function ensureR2Cors() {
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     site,
+    "https://lopango.site",
+    "https://www.lopango.site",
     "https://lopango-lovat.vercel.app",
   ].filter(Boolean);
   const unique = Array.from(new Set(origins));

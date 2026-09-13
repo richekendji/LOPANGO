@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Espace vendeur",
+  title: "Abonnement",
   description:
-    "Espace propriétaire LOPANGO : gérez vos annonces et les demandes des locataires.",
-  path: "/dashboard",
+    "Débloquez LOPANGO par Mobile Money : 4 999 FCFA/mois ou 49 990 FCFA/an. Contacts et publication.",
+  path: "/paiement",
 });
 
-export default function DashboardLayout({
+export default function PaiementLayout({
   children,
 }: {
   children: React.ReactNode;

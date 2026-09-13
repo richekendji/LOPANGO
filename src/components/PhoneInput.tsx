@@ -5,6 +5,7 @@ import {
   formatLocalPart,
   type PhonePrefix,
 } from "@/lib/phone";
+import { SelectField } from "@/components/SelectField";
 
 const field =
   "rounded-2xl border border-[#ebebeb] bg-white px-3 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-400";
@@ -32,15 +33,15 @@ export function PhoneInput({
         Numéro
       </span>
       <div className="flex gap-2">
-        <select
-          className={`${field} w-[4.5rem] shrink-0 font-mono`}
+        <SelectField
+          compact
           value={prefix}
           onChange={(e) => setPrefix(e.target.value as PhonePrefix)}
           aria-label="Préfixe"
         >
           <option value="06">06</option>
           <option value="05">05</option>
-        </select>
+        </SelectField>
         <input
           type="tel"
           inputMode="numeric"

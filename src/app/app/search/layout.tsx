@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Espace vendeur",
+  title: "Recherche",
   description:
-    "Espace propriétaire LOPANGO : gérez vos annonces et les demandes des locataires.",
-  path: "/dashboard",
+    "Recherchez une maison à louer au Congo par quartier, type, prix et mots-clés.",
+  path: "/app/search",
 });
 
-export default function DashboardLayout({
+export default function SearchLayout({
   children,
 }: {
   children: React.ReactNode;

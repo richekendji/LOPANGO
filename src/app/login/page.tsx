@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { signIn } from "@/app/actions/auth";
 import { AuthBackLink } from "@/components/AuthBackLink";
+import { PasswordField } from "@/components/PasswordField";
 import { PhoneInput } from "@/components/PhoneInput";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Connexion",
+  description:
+    "Connectez-vous à LOPANGO avec votre numéro et votre mot de passe pour trouver ou publier une maison au Congo.",
+  path: "/login",
+});
 
 const ERRORS: Record<string, string> = {
   "missing-fields": "Veuillez remplir tous les champs.",
@@ -16,9 +26,6 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
-
-  const field =
-    "w-full rounded-2xl border border-[#ebebeb] bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-400";
 
   return (
     <div className="min-h-full bg-[#f5f5f5]">
@@ -49,19 +56,12 @@ export default async function LoginPage({
         >
           <PhoneInput />
 
-          <label className="block space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-              Mot de passe
-            </span>
-            <input
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              className={field}
-              placeholder="Votre mot de passe"
-            />
-          </label>
+          <PasswordField
+            name="password"
+            label="Mot de passe"
+            autoComplete="current-password"
+            placeholder="Votre mot de passe"
+          />
 
           <div className="text-right">
             <Link

@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import { AuthAccountCard, ProfileSignOut } from "@/components/AuthAccountCard";
 import { ProfileClient } from "./ProfileClient";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Profil",
+  description: "Gérez votre profil LOPANGO : coordonnées, ville et rôle.",
+  path: "/app/profile",
+});
 
 export default function ProfilePage() {
   return (

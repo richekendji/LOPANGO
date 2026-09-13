@@ -18,7 +18,9 @@ type IconName =
   | "share"
   | "send"
   | "bookmark"
-  | "message";
+  | "message"
+  | "eye"
+  | "eyeOff";
 
 export function Icon({
   name,
@@ -174,6 +176,22 @@ export function Icon({
         <svg {...common}>
           <rect x="4" y="4" width="16" height="16" rx="4" />
           <path d="M12 8v8M8 12h8" />
+        </svg>
+      );
+    case "eye":
+      return (
+        <svg {...common}>
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      );
+    case "eyeOff":
+      return (
+        <svg {...common}>
+          <path d="M3 3l18 18" />
+          <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+          <path d="M9.9 5.1A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a16.7 16.7 0 0 1-3.1 4.1" />
+          <path d="M6.1 6.1A16.4 16.4 0 0 0 2 12s3.5 7 10 7a10.4 10.4 0 0 0 4.2-.9" />
         </svg>
       );
     default:

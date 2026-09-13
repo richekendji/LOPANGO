@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { signUp } from "@/app/actions/auth";
 import { AuthBackLink } from "@/components/AuthBackLink";
+import { PasswordField } from "@/components/PasswordField";
 import { PhoneInput } from "@/components/PhoneInput";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Créer un compte",
+  description:
+    "Inscrivez-vous sur LOPANGO : prénom, nom, numéro Congo et email de récupération. Ensuite, cherchez ou publiez une maison.",
+  path: "/register",
+});
 
 const ERRORS: Record<string, string> = {
   "missing-fields": "Veuillez remplir tous les champs.",
@@ -56,7 +66,7 @@ export default async function RegisterPage({
           action={signUp}
           className="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm"
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block space-y-1">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
                 Prénom
@@ -104,35 +114,21 @@ export default async function RegisterPage({
             </span>
           </label>
 
-          <label className="block space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-              Mot de passe
-            </span>
-            <input
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              className={field}
-              placeholder="Au moins 8 caractères"
-            />
-          </label>
+          <PasswordField
+            name="password"
+            label="Mot de passe"
+            autoComplete="new-password"
+            minLength={8}
+            placeholder="Au moins 8 caractères"
+          />
 
-          <label className="block space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-              Confirmer le mot de passe
-            </span>
-            <input
-              name="passwordConfirm"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              className={field}
-              placeholder="Retapez le mot de passe"
-            />
-          </label>
+          <PasswordField
+            name="passwordConfirm"
+            label="Confirmer le mot de passe"
+            autoComplete="new-password"
+            minLength={8}
+            placeholder="Retapez le mot de passe"
+          />
 
           <button
             type="submit"

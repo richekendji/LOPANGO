@@ -13,6 +13,7 @@ import {
 } from "@/lib/mock/houses";
 import { getHouses, subscribeStore } from "@/lib/mock/store";
 import { houseMatchesQuery } from "@/lib/search";
+import { SelectField } from "@/components/SelectField";
 
 const SEARCH_DRAFT_KEY = "lopango_search_draft_v1";
 
@@ -186,13 +187,12 @@ export default function SearchPage() {
         </div>
       </form>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <label className="block space-y-1">
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <label className="block min-w-0 space-y-1">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
             Quartier
           </span>
-          <select
-            className={field}
+          <SelectField
             value={neighborhood}
             onChange={(e) => setNeighborhood(e.target.value)}
           >
@@ -202,15 +202,14 @@ export default function SearchPage() {
                 {n}
               </option>
             ))}
-          </select>
+          </SelectField>
         </label>
 
-        <label className="block space-y-1">
+        <label className="block min-w-0 space-y-1">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
             Type
           </span>
-          <select
-            className={field}
+          <SelectField
             value={houseType}
             onChange={(e) =>
               setHouseType(e.target.value as HouseType | "")
@@ -222,7 +221,7 @@ export default function SearchPage() {
                 {t}
               </option>
             ))}
-          </select>
+          </SelectField>
         </label>
 
         <label className="block space-y-1">

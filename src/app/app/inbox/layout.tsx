@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Espace vendeur",
-  description:
-    "Espace propriétaire LOPANGO : gérez vos annonces et les demandes des locataires.",
-  path: "/dashboard",
+  title: "Messages",
+  description: "Vos messages et demandes de contact sur LOPANGO.",
+  path: "/app/inbox",
 });
 
-export default function DashboardLayout({
+export default function InboxLayout({
   children,
 }: {
   children: React.ReactNode;

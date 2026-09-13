@@ -1,5 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { updatePassword } from "@/app/actions/auth";
+import { PasswordField } from "@/components/PasswordField";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Nouveau mot de passe",
+  description:
+    "Choisissez un nouveau mot de passe pour votre compte LOPANGO.",
+  path: "/reset-password",
+});
 
 const ERRORS: Record<string, string> = {
   "weak-password": "Le mot de passe doit contenir au moins 8 caractères.",
@@ -12,9 +22,6 @@ export default async function ResetPasswordPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
-
-  const field =
-    "w-full rounded-2xl border border-[#ebebeb] bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-400";
 
   return (
     <div className="min-h-full bg-[#f5f5f5]">
@@ -36,7 +43,7 @@ export default async function ResetPasswordPage({
 
         {params.error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {ERRORS[params.error] ?? params.error}
+            {ERRORS[params.error] ?? "Une erreur est survenue."}
           </div>
         )}
 
@@ -44,35 +51,21 @@ export default async function ResetPasswordPage({
           action={updatePassword}
           className="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm"
         >
-          <label className="block space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-              Nouveau mot de passe
-            </span>
-            <input
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              className={field}
-              placeholder="Au moins 8 caractères"
-            />
-          </label>
+          <PasswordField
+            name="password"
+            label="Nouveau mot de passe"
+            autoComplete="new-password"
+            minLength={8}
+            placeholder="Au moins 8 caractères"
+          />
 
-          <label className="block space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-              Confirmer
-            </span>
-            <input
-              name="passwordConfirm"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              className={field}
-              placeholder="Retapez le mot de passe"
-            />
-          </label>
+          <PasswordField
+            name="passwordConfirm"
+            label="Confirmer"
+            autoComplete="new-password"
+            minLength={8}
+            placeholder="Retapez le mot de passe"
+          />
 
           <button
             type="submit"

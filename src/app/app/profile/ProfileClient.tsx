@@ -11,6 +11,7 @@ import {
   type UserProfile,
   type UserRole,
 } from "@/lib/mock/store";
+import { SelectField } from "@/components/SelectField";
 
 export function ProfileClient() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -146,8 +147,7 @@ export function ProfileClient() {
             <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
               Ville
             </span>
-            <select
-              className={field}
+            <SelectField
               value={form.city}
               onChange={(e) => setForm({ ...form, city: e.target.value })}
             >
@@ -156,7 +156,7 @@ export function ProfileClient() {
                   {c}
                 </option>
               ))}
-            </select>
+            </SelectField>
           </label>
           <fieldset className="space-y-2">
             <legend className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">

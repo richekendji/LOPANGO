@@ -59,7 +59,7 @@ export function AppSidebar() {
         <div className="rounded-2xl bg-zinc-50 p-3">
           <p className="text-xs font-medium text-zinc-500">Connecté en tant que</p>
           <p className="mt-1 text-sm font-semibold text-zinc-900">Jean Dupont</p>
-          <p className="text-xs text-zinc-500">Propriétaire · Brazzaville</p>
+          <p className="text-xs text-zinc-500">Propriétaire</p>
         </div>
       </div>
     </aside>
@@ -69,32 +69,27 @@ export function AppSidebar() {
 export function AppShellHeader({ onMenu }: { onMenu: () => void }) {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface)]/95 px-4 py-3 backdrop-blur sm:px-6">
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
           aria-label="Ouvrir le menu"
           onClick={onMenu}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] text-zinc-700 lg:hidden"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border)] text-zinc-700 lg:hidden"
         >
           <Icon name="menu" />
         </button>
-
-        <div className="flex flex-col">
-          <span className="text-[11px] uppercase tracking-wide text-zinc-400">
-            Location
-          </span>
-          <span className="flex items-center gap-1 text-sm font-bold text-zinc-900">
-            <Icon name="pin" className="h-3.5 w-3.5" />
-            Brazzaville, Congo
-            <Icon name="chevron" className="h-4 w-4 text-zinc-400" />
-          </span>
-        </div>
+        <Link
+          href="/dashboard"
+          className="truncate text-sm font-black tracking-tight text-zinc-900 lg:hidden"
+        >
+          LOPANGO
+        </Link>
       </div>
 
       <button
         type="button"
         aria-label="Notifications"
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] text-zinc-700"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border)] text-zinc-700"
       >
         <Icon name="bell" />
       </button>

@@ -16,6 +16,7 @@ import {
   savePaiementPeriod,
   setSubscriptionActive,
 } from "@/lib/mock/store";
+import { SelectField } from "@/components/SelectField";
 
 const ARGUMENTS_LOCATAIRE = [
   "Accès direct aux contacts de plus de 1 000 propriétaires dans tout le Congo",
@@ -310,8 +311,7 @@ function PaiementContent() {
                 <span className="text-xs font-semibold text-zinc-500">
                   Opérateur
                 </span>
-                <select
-                  className={field}
+                <SelectField
                   value={operator}
                   onChange={(e) =>
                     setOperator(
@@ -324,7 +324,7 @@ function PaiementContent() {
                       {op.label}
                     </option>
                   ))}
-                </select>
+                </SelectField>
               </label>
               <label className="block space-y-1">
                 <span className="text-xs font-semibold text-zinc-500">

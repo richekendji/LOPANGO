@@ -93,18 +93,14 @@ export function FeedBottomNav() {
 
 export function FeedHeader() {
   return (
-    <header className="sticky top-0 z-40 bg-[#f5f5f5]/95 px-4 pb-2 pt-3 backdrop-blur">
+    <header className="sticky top-0 z-40 bg-[#f5f5f5]/95 px-4 pb-2.5 pt-3 backdrop-blur">
       <div className="mx-auto flex max-w-lg items-center justify-center">
-        <button type="button" className="flex flex-col items-center">
-          <span className="text-[11px] leading-none text-zinc-400">
-            Location
-          </span>
-          <span className="mt-1 flex items-center gap-1 text-[15px] font-bold leading-none text-zinc-900">
-            <Icon name="pin" className="h-3.5 w-3.5" />
-            Brazzaville
-            <Icon name="chevron" className="h-4 w-4 text-zinc-400" />
-          </span>
-        </button>
+        <Link
+          href="/app"
+          className="text-lg font-black tracking-tight text-zinc-900"
+        >
+          LOPANGO
+        </Link>
       </div>
     </header>
   );
