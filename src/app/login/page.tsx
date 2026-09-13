@@ -8,6 +8,7 @@ import { AuthQueryAlert } from "@/components/AuthQueryAlert";
 import { PasswordField } from "@/components/PasswordField";
 import { PhoneInput } from "@/components/PhoneInput";
 import { SubmitButton } from "@/components/SubmitButton";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { currentUserHomePath } from "@/lib/admin";
 import { pageMetadata } from "@/lib/seo";
 
@@ -35,12 +36,7 @@ export default async function LoginPage() {
       <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-10">
         <AuthBackLink href="/" />
         <div className="text-center">
-          <Link
-            href="/"
-            className="text-2xl font-black tracking-tight text-zinc-900"
-          >
-            LOPANGO
-          </Link>
+          <BrandLogo stacked withTagline size="lg" className="text-zinc-900" />
           <h1 className="mt-4 text-2xl font-bold text-zinc-900">Connexion</h1>
           <p className="mt-2 text-sm text-zinc-500">
             Numéro + mot de passe uniquement.

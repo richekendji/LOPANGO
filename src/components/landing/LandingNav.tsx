@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { MagneticLink } from "./MagneticLink";
 
 const LINKS = [
@@ -30,15 +31,13 @@ export function LandingNav() {
       ].join(" ")}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link
-          href="/"
+        <BrandLogo
+          size="sm"
           className={[
-            "text-xl font-black tracking-tight transition-colors",
+            "transition-colors",
             solid ? "text-zinc-900" : "text-white",
           ].join(" ")}
-        >
-          LOPANGO
-        </Link>
+        />
 
         <nav className="hidden items-center gap-6 md:flex">
           {LINKS.map((l) => (

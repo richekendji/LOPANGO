@@ -7,6 +7,7 @@ import { AuthQueryAlert } from "@/components/AuthQueryAlert";
 import { PasswordField } from "@/components/PasswordField";
 import { PhoneInput } from "@/components/PhoneInput";
 import { SubmitButton } from "@/components/SubmitButton";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -37,12 +38,7 @@ export default function RegisterPage() {
       <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-10">
         <AuthBackLink href="/" />
         <div className="text-center">
-          <Link
-            href="/"
-            className="text-2xl font-black tracking-tight text-zinc-900"
-          >
-            LOPANGO
-          </Link>
+          <BrandLogo stacked withTagline size="lg" className="text-zinc-900" />
           <h1 className="mt-4 text-2xl font-bold text-zinc-900">
             Créer un compte
           </h1>

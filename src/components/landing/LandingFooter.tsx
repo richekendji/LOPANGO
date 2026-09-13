@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { MagneticLink } from "./MagneticLink";
 
 export function LandingFooter() {
@@ -6,8 +7,8 @@ export function LandingFooter() {
     <footer className="rounded-t-[2rem] bg-zinc-900 px-4 pb-10 pt-14 text-white sm:rounded-t-[3rem] sm:px-6">
       <div className="mx-auto grid max-w-6xl gap-10 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <p className="text-2xl font-black tracking-tight">LOPANGO</p>
-          <p className="mt-2 max-w-xs text-sm text-zinc-400">
+          <BrandLogo withTagline size="lg" className="text-white" />
+          <p className="mt-3 max-w-xs text-sm text-zinc-400">
             Location de maisons au Congo — contact direct, zéro démarcheur.
           </p>
           <MagneticLink href="/register" variant="onDark" className="mt-5">

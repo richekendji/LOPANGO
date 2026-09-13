@@ -71,6 +71,8 @@ export function websiteJsonLd() {
       "@type": "Organization",
       name: SITE_NAME,
       url: SITE_URL,
+      logo: `${SITE_URL}/icon.svg`,
+      slogan: "Louer est facile",
     },
     potentialAction: {
       "@type": "SearchAction",
