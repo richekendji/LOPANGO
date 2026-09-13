@@ -229,13 +229,15 @@ function PaiementContent() {
 
         <div className="flex flex-col items-center text-center">
           <h2
-            className={`text-[26px] font-bold leading-tight tracking-tight ${
-              isPublier ? "text-[#e11d48]" : "text-zinc-900"
+            className={`font-bold leading-tight tracking-tight ${
+              isPublier
+                ? "whitespace-nowrap text-[15px] text-[#e11d48] sm:text-[20px]"
+                : "text-[26px] text-zinc-900"
             }`}
           >
             {isPublier
-              ? "Frais de publication de propriété"
-              : "Abonnements Lopango"}
+              ? "Protège ta maison avant que ce soit tard"
+              : "Débloque l’adresse de la maison"}
           </h2>
           <p
             className={`mt-2 max-w-sm text-[13px] leading-snug ${

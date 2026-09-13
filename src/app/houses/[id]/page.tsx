@@ -256,9 +256,6 @@ function HousePublicContent() {
                 >
                   Débloquer le contact
                 </Link>
-                <p className="mt-2 text-center text-[11px] text-zinc-500">
-                  Composition et prix restent visibles
-                </p>
               </div>
             )}
           </div>

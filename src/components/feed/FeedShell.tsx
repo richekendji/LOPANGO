@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Icon } from "@/components/Icon";
 import { InstantTabLink, useInstantNav } from "@/components/InstantNav";
 import { hasActiveSubscription, refreshSubscriptionStatus, subscribeStore } from "@/lib/mock/store";
@@ -101,21 +100,10 @@ export function FeedBottomNav() {
   );
 }
 
-export function FeedHeader() {
-  return (
-    <header className="sticky top-0 z-40 bg-[#f5f5f5]/95 px-4 pb-2.5 pt-3 backdrop-blur">
-      <div className="mx-auto flex max-w-lg items-center justify-center">
-        <BrandLogo href="/app" size="sm" />
-      </div>
-    </header>
-  );
-}
-
 export function FeedShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#f5f5f5] text-zinc-900">
-      <FeedHeader />
-      <div className="mx-auto max-w-lg pb-24">{children}</div>
+      <div className="mx-auto max-w-lg pb-24 pt-3">{children}</div>
       <FeedBottomNav />
     </div>
   );
