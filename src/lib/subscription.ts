@@ -1,12 +1,14 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { BillingPeriod } from "@/lib/pricing";
-import { priceForPeriod } from "@/lib/pricing";
+import { priceForPeriod, SUBSCRIPTION_DURATION_DAYS } from "@/lib/pricing";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function periodDurationMs(period: BillingPeriod) {
-  return period === "annuel" ? 365 * DAY_MS : 30 * DAY_MS;
+  return period === "annuel"
+    ? 365 * DAY_MS
+    : SUBSCRIPTION_DURATION_DAYS * DAY_MS;
 }
 
 /** Active l’abonnement côté DB (service_role). Couvre tenant + owner. */

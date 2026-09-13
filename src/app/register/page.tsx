@@ -12,14 +12,13 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata: Metadata = pageMetadata({
   title: "Créer un compte",
   description:
-    "Inscrivez-vous sur LOPANGO : prénom, nom, numéro Congo et email de récupération. Ensuite, cherchez ou publiez une maison.",
+    "Inscrivez-vous sur LOPANGO : prénom, nom, numéro Congo et mot de passe. Ensuite, cherchez ou publiez une maison.",
   path: "/register",
 });
 
 const ERRORS: Record<string, string> = {
   "missing-fields": "Veuillez remplir tous les champs.",
   "invalid-phone": "Numéro invalide. Format : 06 ou 05 + 123 45 67.",
-  "invalid-email": "Email de récupération invalide.",
   "weak-password": "Le mot de passe doit contenir au moins 8 caractères.",
   "password-mismatch": "Les mots de passe ne correspondent pas.",
   "phone-taken":
@@ -48,7 +47,7 @@ export default function RegisterPage() {
             Créer un compte
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
-            Prénom, nom, numéro, email de récupération et mot de passe.
+            Prénom, nom, numéro et mot de passe.
           </p>
         </div>
 
@@ -90,23 +89,6 @@ export default function RegisterPage() {
           </div>
 
           <PhoneInput />
-
-          <label className="block space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-              Email de récupération
-            </span>
-            <input
-              name="recoveryEmail"
-              type="email"
-              required
-              autoComplete="email"
-              className={field}
-              placeholder="vous@email.com"
-            />
-            <span className="text-[11px] text-zinc-400">
-              Obligatoire pour réinitialiser le mot de passe.
-            </span>
-          </label>
 
           <PasswordField
             name="password"

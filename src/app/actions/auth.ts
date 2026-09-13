@@ -36,22 +36,16 @@ export async function signUp(formData: FormData) {
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const phoneRaw = String(formData.get("phone") ?? "");
-  const recoveryEmailRaw = String(formData.get("recoveryEmail") ?? "");
   const password = String(formData.get("password") ?? "");
   const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
 
-  if (!firstName || !lastName || !phoneRaw || !recoveryEmailRaw || !password) {
+  if (!firstName || !lastName || !phoneRaw || !password) {
     registerError("missing-fields");
   }
 
   const phone = normalizePhone(phoneRaw);
   if (!phone || !isValidPhone(phone)) {
     registerError("invalid-phone");
-  }
-
-  const recoveryEmail = normalizeEmail(recoveryEmailRaw);
-  if (!recoveryEmail || !isValidEmail(recoveryEmail)) {
-    registerError("invalid-email");
   }
 
   if (password.length < MIN_PASSWORD) {
@@ -106,7 +100,7 @@ export async function signUp(formData: FormData) {
 
   const { error: profileError } = await admin.from("profiles").upsert({
     id: data.user.id,
-    email: recoveryEmail,
+    email: null,
     full_name: `${firstName} ${lastName}`,
     phone,
     role: "tenant",
