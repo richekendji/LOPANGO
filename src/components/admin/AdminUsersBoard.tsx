@@ -6,10 +6,11 @@ import type { AdminUserRow } from "@/lib/admin";
 import {
   formatAdminDate,
   formatAdminPhone,
+  roleHint,
   roleLabel,
 } from "@/lib/admin-format";
 
-type Filter = "all" | "paid" | "unpaid";
+type Filter = "all" | "tenant" | "owner";
 
 export function AdminUsersBoard({ users }: { users: AdminUserRow[] }) {
   const [q, setQ] = useState("");
@@ -18,18 +19,19 @@ export function AdminUsersBoard({ users }: { users: AdminUserRow[] }) {
   const list = useMemo(() => {
     const query = q.trim().toLowerCase();
     return users.filter((u) => {
-      if (filter === "paid" && !u.paid) return false;
-      if (filter === "unpaid" && u.paid) return false;
+      if (filter === "tenant" && u.role !== "tenant") return false;
+      if (filter === "owner" && u.role !== "owner") return false;
       if (!query) return true;
-      const hay = `${u.fullName} ${u.firstName} ${u.lastName} ${u.phone ?? ""} ${u.email ?? ""}`.toLowerCase();
+      const hay =
+        `${u.fullName} ${u.firstName} ${u.lastName} ${u.phone ?? ""}`.toLowerCase();
       return hay.includes(query);
     });
   }, [users, q, filter]);
 
   const tabs: { id: Filter; label: string }[] = [
     { id: "all", label: "Tous" },
-    { id: "paid", label: "Payé" },
-    { id: "unpaid", label: "Non payé" },
+    { id: "tenant", label: "Locataires" },
+    { id: "owner", label: "Propriétaires" },
   ];
 
   return (
@@ -60,7 +62,7 @@ export function AdminUsersBoard({ users }: { users: AdminUserRow[] }) {
       </div>
 
       <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-        {list.length} compte{list.length > 1 ? "s" : ""}
+        {list.length} personne{list.length > 1 ? "s" : ""}
       </p>
 
       <div className="space-y-2">
@@ -84,24 +86,24 @@ export function AdminUsersBoard({ users }: { users: AdminUserRow[] }) {
                   {formatAdminPhone(u.phone)}
                 </p>
                 <p className="mt-0.5 text-[11px] text-zinc-400">
-                  {roleLabel(u.role)} · {formatAdminDate(u.createdAt)}
+                  {roleHint(u.role)} · {formatAdminDate(u.createdAt)}
                 </p>
               </div>
               <span
                 className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                  u.paid
-                    ? "bg-emerald-50 text-emerald-800"
+                  u.role === "owner"
+                    ? "bg-zinc-900 text-white"
                     : "bg-[#f5f5f5] text-zinc-600"
                 }`}
               >
-                {u.paid ? "Payé" : "Non payé"}
+                {roleLabel(u.role)}
               </span>
             </Link>
           );
         })}
         {list.length === 0 && (
           <div className="rounded-2xl bg-white px-4 py-8 text-center text-sm text-zinc-500 shadow-sm">
-            Aucun utilisateur.
+            Personne ici.
           </div>
         )}
       </div>

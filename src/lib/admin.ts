@@ -15,12 +15,6 @@ export type AdminUserRow = {
   email: string | null;
   role: string | null;
   createdAt: string | null;
-  paid: boolean;
-  expiresAt: string | null;
-  startsAt: string | null;
-  amount: number | null;
-  paymentMethod: string | null;
-  transactionId: string | null;
 };
 
 function adminPhones(): Set<string> {
@@ -68,14 +62,6 @@ function splitName(fullName: string | null | undefined) {
   if (parts.length === 0) return { firstName: "—", lastName: "" };
   if (parts.length === 1) return { firstName: parts[0], lastName: "" };
   return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
-}
-
-function isPaidRow(sub: {
-  status?: string | null;
-  expires_at?: string | null;
-} | null) {
-  if (!sub || sub.status !== "active" || !sub.expires_at) return false;
-  return new Date(sub.expires_at).getTime() > Date.now();
 }
 
 export async function requireAdmin() {
@@ -127,60 +113,26 @@ async function authCreatedAtMap() {
 
 export async function getAdminUsers(): Promise<AdminUserRow[]> {
   const admin = createAdminClient();
-  const [{ data: profiles }, { data: subs }, created] = await Promise.all([
+  const [{ data: profiles }, created] = await Promise.all([
     admin
       .from("profiles")
       .select("id, email, full_name, phone, role")
       .order("full_name", { ascending: true }),
-    admin
-      .from("subscriptions")
-      .select(
-        "user_id, status, expires_at, starts_at, amount, payment_method, transaction_id",
-      ),
     authCreatedAtMap(),
   ]);
 
-  const subByUser = new Map<
-    string,
-    {
-      status: string | null;
-      expires_at: string | null;
-      starts_at: string | null;
-      amount: number | null;
-      payment_method: string | null;
-      transaction_id: string | null;
-    }
-  >();
-
-  for (const s of subs ?? []) {
-    const current = subByUser.get(s.user_id);
-    const nextExp = s.expires_at ? new Date(s.expires_at).getTime() : 0;
-    const curExp = current?.expires_at
-      ? new Date(current.expires_at).getTime()
-      : 0;
-    if (!current || nextExp >= curExp) {
-      subByUser.set(s.user_id, s);
-    }
-  }
-
   return (profiles ?? []).map((p) => {
     const names = splitName(p.full_name);
-    const sub = subByUser.get(p.id) ?? null;
     return {
       id: p.id,
       firstName: names.firstName,
       lastName: names.lastName,
-      fullName: p.full_name?.trim() || `${names.firstName} ${names.lastName}`.trim(),
+      fullName:
+        p.full_name?.trim() || `${names.firstName} ${names.lastName}`.trim(),
       phone: p.phone,
       email: p.email,
       role: p.role,
       createdAt: created.get(p.id) ?? null,
-      paid: isPaidRow(sub),
-      expiresAt: sub?.expires_at ?? null,
-      startsAt: sub?.starts_at ?? null,
-      amount: sub?.amount ?? null,
-      paymentMethod: sub?.payment_method ?? null,
-      transactionId: sub?.transaction_id ?? null,
     };
   });
 }
@@ -191,10 +143,11 @@ export async function getAdminUser(id: string): Promise<AdminUserRow | null> {
 }
 
 export function adminStats(users: AdminUserRow[]) {
-  const paid = users.filter((u) => u.paid).length;
+  const tenants = users.filter((u) => u.role === "tenant").length;
+  const owners = users.filter((u) => u.role === "owner").length;
   return {
     total: users.length,
-    paid,
-    unpaid: users.length - paid,
+    tenants,
+    owners,
   };
 }

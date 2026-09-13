@@ -22,7 +22,7 @@ export default async function AdminLayout({
             LOPANGO
           </Link>
           <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-            Admin
+            Location
           </span>
         </div>
       </header>

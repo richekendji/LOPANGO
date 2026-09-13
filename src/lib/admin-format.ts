@@ -1,5 +1,4 @@
 import { displayNormalizedPhone, normalizePhone } from "@/lib/phone";
-import { formatFcfa } from "@/lib/mock/houses";
 
 export function formatAdminDate(iso: string | null) {
   if (!iso) return "—";
@@ -31,13 +30,14 @@ export function formatAdminPhone(phone: string | null) {
   return n ? displayNormalizedPhone(n) : phone;
 }
 
-export function formatAdminAmount(amount: number | null) {
-  if (amount == null) return "—";
-  return formatFcfa(amount);
-}
-
 export function roleLabel(role: string | null) {
   if (role === "owner") return "Propriétaire";
   if (role === "tenant") return "Locataire";
   return role || "—";
+}
+
+export function roleHint(role: string | null) {
+  if (role === "owner") return "Publie des maisons à louer";
+  if (role === "tenant") return "Cherche une maison";
+  return "Rôle non renseigné";
 }

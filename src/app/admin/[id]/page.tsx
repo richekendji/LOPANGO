@@ -2,9 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminUser } from "@/lib/admin";
 import {
-  formatAdminAmount,
   formatAdminDateTime,
   formatAdminPhone,
+  roleHint,
   roleLabel,
 } from "@/lib/admin-format";
 
@@ -24,15 +24,9 @@ export default async function AdminUserPage({
     { label: "Prénom", value: user.firstName },
     { label: "Nom", value: user.lastName || "—" },
     { label: "Numéro", value: formatAdminPhone(user.phone) },
-    { label: "Email", value: user.email || "—" },
     { label: "Rôle", value: roleLabel(user.role) },
+    { label: "Sur LOPANGO", value: roleHint(user.role) },
     { label: "Inscription", value: formatAdminDateTime(user.createdAt) },
-    { label: "Abonnement", value: user.paid ? "Actif — payé" : "Non payé" },
-    { label: "Début abo", value: formatAdminDateTime(user.startsAt) },
-    { label: "Fin abo", value: formatAdminDateTime(user.expiresAt) },
-    { label: "Montant", value: formatAdminAmount(user.amount) },
-    { label: "Paiement", value: user.paymentMethod || "—" },
-    { label: "Transaction", value: user.transactionId || "—" },
   ];
 
   return (
@@ -59,12 +53,12 @@ export default async function AdminUserPage({
             </p>
             <span
               className={`mt-1.5 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                user.paid
-                  ? "bg-emerald-50 text-emerald-800"
+                user.role === "owner"
+                  ? "bg-zinc-900 text-white"
                   : "bg-[#f5f5f5] text-zinc-600"
               }`}
             >
-              {user.paid ? "Payé" : "Non payé"}
+              {roleLabel(user.role)}
             </span>
           </div>
         </div>
