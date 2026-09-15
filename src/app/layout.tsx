@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 import "./globals.css";
 import {
   DEFAULT_DESCRIPTION,
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full font-sans text-[var(--foreground)] antialiased">
+        <MetaPixel />
         {children}
       </body>
     </html>
