@@ -7,6 +7,7 @@ import { Icon } from "@/components/Icon";
 import { HouseSpecsGrid } from "@/components/HouseSpecsGrid";
 import { MediaCarousel } from "@/components/MediaCarousel";
 import { formatFcfa, getLockedAddressRows, newId, type SellerHouse } from "@/lib/mock/houses";
+import { fbqTrack } from "@/lib/analytics/fbq";
 import {
   getHouse,
   getProfile,
@@ -35,6 +36,21 @@ function HousePublicContent() {
     refresh();
     void refreshSubscriptionStatus().then(setSubscribed);
     return subscribeStore(refresh);
+  }, [id]);
+
+  // ViewContent : une fiche maison a été consultée.
+  useEffect(() => {
+    if (!house) return;
+    fbqTrack("ViewContent", {
+      content_name: house.title,
+      content_type: "product",
+      content_ids: [house.id],
+      value: house.price,
+      currency: "XAF",
+      city: house.city,
+    });
+    // Une seule fois par fiche ouverte.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   if (!house || house.status !== "active") {
@@ -83,6 +99,12 @@ function HousePublicContent() {
     setMessage("");
     setComposeOpen(false);
     setSent(true);
+    // Contact : message envoyé au propriétaire — signal d'intention très fort.
+    fbqTrack("Contact", {
+      content_name: house.title,
+      content_type: "product",
+      content_ids: [house.id],
+    });
     setTimeout(() => setSent(false), 2500);
   }
 

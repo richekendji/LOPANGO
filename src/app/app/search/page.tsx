@@ -13,6 +13,7 @@ import {
 } from "@/lib/mock/houses";
 import { getHouses, subscribeStore } from "@/lib/mock/store";
 import { houseMatchesQuery } from "@/lib/search";
+import { fbqTrack } from "@/lib/analytics/fbq";
 import { SelectField } from "@/components/SelectField";
 
 const SEARCH_DRAFT_KEY = "lopango_search_draft_v1";
@@ -112,6 +113,11 @@ export default function SearchPage() {
     e?.preventDefault();
     const next = query.trim();
     setCommittedQuery(next);
+    // Search : recherche lancée par l'utilisateur.
+    fbqTrack("Search", {
+      search_string: next,
+      content_type: "product",
+    });
     // Laisser React appliquer le filtre puis scroller
     window.setTimeout(() => {
       resultsRef.current?.scrollIntoView({

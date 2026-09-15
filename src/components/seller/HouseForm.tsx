@@ -22,6 +22,7 @@ import {
   saveHouseFormDraft,
 } from "@/lib/mock/store";
 import { fileToPersistentUrl } from "@/lib/images";
+import { fbqTrack } from "@/lib/analytics/fbq";
 import {
   compressAndStoreVideo,
   deleteVideoBlob,
@@ -361,6 +362,17 @@ export function HouseForm({
     saveHouse(house);
     clearHouseFormDraft(draftId);
     if (!draftId) clearHouseFormDraft(null);
+    // Lead : une maison vient d'être publiée (conversion côté propriétaire).
+    if (status === "active") {
+      fbqTrack("Lead", {
+        content_name: house.title,
+        content_type: "product",
+        content_ids: [house.id],
+        value: house.price,
+        currency: "XAF",
+        city: house.city,
+      });
+    }
     router.push(`/dashboard/houses/${house.id}`);
   }
 

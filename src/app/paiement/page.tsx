@@ -17,6 +17,7 @@ import {
   setSubscriptionActive,
 } from "@/lib/mock/store";
 import { SelectField } from "@/components/SelectField";
+import { FBQ_CURRENCY, fbqTrack } from "@/lib/analytics/fbq";
 
 const ARGUMENTS_LOCATAIRE = [
   "Accès direct aux contacts de plus de 1 000 propriétaires dans tout le Congo",
@@ -72,9 +73,19 @@ function PaiementContent() {
 
   useEffect(() => {
     setPeriod(getPaiementPeriod());
+    // InitiateCheckout : arrivée sur la page de paiement avec le montant consulté.
+    fbqTrack("InitiateCheckout", {
+      content_name: isPublier
+        ? "Publication maison"
+        : "Débloquer contact propriétaire",
+      content_type: "product",
+      value: period === "mensuel" ? PRICE_MENSUEL : PRICE_ANNUEL,
+      currency: FBQ_CURRENCY,
+    });
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function choosePeriod(next: BillingPeriod) {
@@ -92,6 +103,15 @@ function PaiementContent() {
     setSubscriptionActive(true);
     setPolling(false);
     setPaying(false);
+    // Purchase : paiement confirmé — l'événement de conversion principal.
+    fbqTrack("Purchase", {
+      content_name: isPublier
+        ? "Publication maison"
+        : "Débloquer contact propriétaire",
+      content_type: "product",
+      value: period === "mensuel" ? PRICE_MENSUEL : PRICE_ANNUEL,
+      currency: FBQ_CURRENCY,
+    });
     router.replace(buildReturnUrl(retour));
   }
 
