@@ -56,9 +56,11 @@ export async function currentUserHomePath(): Promise<string | null> {
         .select("phone")
         .eq("id", user.id)
         .maybeSingle();
+      // Source de vérité : la table profiles. metaPhone sert uniquement
+      // de repli d'affichage si la DB est momentanément indisponible.
       return postLoginPath(profile?.phone ?? metaPhone);
     } catch {
-      return postLoginPath(metaPhone);
+      return null;
     }
   } catch {
     return null;
@@ -102,16 +104,16 @@ export async function requireAdmin() {
       .eq("id", user.id)
       .maybeSingle();
 
-    if (!isAdminPhone(profile?.phone) && !isAdminPhone(metaPhone)) {
+    // Décision d'autorisation UNIQUEMENT sur la table profiles (RLS,
+    // téléphone non modifiable par l'utilisateur — cf. policy UPDATE).
+    // user_metadata est modifiable par l'utilisateur : jamais utilisé ici.
+    if (!isAdminPhone(profile?.phone)) {
       redirect("/app");
     }
 
-    return { user, profilePhone: profile?.phone ?? metaPhone ?? null };
+    return { user, profilePhone: profile?.phone ?? null };
   } catch {
-    if (!isAdminPhone(metaPhone)) {
-      redirect("/app");
-    }
-    return { user, profilePhone: metaPhone };
+    redirect("/app");
   }
 }
 

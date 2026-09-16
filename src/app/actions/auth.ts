@@ -61,7 +61,7 @@ export async function signUp(formData: FormData) {
     registerError("config");
   }
 
-  const rl = rateLimit(`signup:${phone}`, { limit: 5, windowMs: 60 * 60_000 });
+  const rl = await rateLimit(`signup:${phone}`, { limit: 5, windowMs: 60 * 60_000 });
   if (!rl.ok) {
     registerError("rate-limit");
   }
@@ -141,7 +141,7 @@ export async function signIn(formData: FormData) {
     loginError("invalid-phone");
   }
 
-  const rl = rateLimit(`signin:${phone}`, { limit: 20, windowMs: 15 * 60_000 });
+  const rl = await rateLimit(`signin:${phone}`, { limit: 20, windowMs: 15 * 60_000 });
   if (!rl.ok) {
     loginError("rate-limit");
   }
@@ -202,7 +202,7 @@ export async function requestPasswordReset(formData: FormData) {
     redirect("/forgot-password?error=invalid-phone");
   }
 
-  const rl = rateLimit(`reset:${phone}`, { limit: 5, windowMs: 60 * 60_000 });
+  const rl = await rateLimit(`reset:${phone}`, { limit: 5, windowMs: 60 * 60_000 });
   if (!rl.ok) {
     redirect("/forgot-password?sent=1");
   }

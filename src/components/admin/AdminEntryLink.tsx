@@ -10,6 +10,8 @@ export async function AdminEntryLink() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
+  // Autorisation basée UNIQUEMENT sur la table profiles (jamais user_metadata,
+  // modifiable par l'utilisateur lui-même).
   const admin = createAdminClient();
   const { data: profile } = await admin
     .from("profiles")
@@ -17,12 +19,7 @@ export async function AdminEntryLink() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const metaPhone =
-    typeof user.user_metadata?.phone === "string"
-      ? user.user_metadata.phone
-      : null;
-
-  if (!isAdminPhone(profile?.phone) && !isAdminPhone(metaPhone)) {
+  if (!isAdminPhone(profile?.phone)) {
     return null;
   }
 

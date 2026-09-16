@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export async function DELETE(req: Request) {
   try {
     const ip = clientIp(req);
-    const rl = rateLimit(`video-del:${ip}`, { limit: 30, windowMs: 60_000 });
+    const rl = await rateLimit(`video-del:${ip}`, { limit: 30, windowMs: 60_000 });
     if (!rl.ok) {
       return NextResponse.json(
         { error: "Trop de requêtes." },

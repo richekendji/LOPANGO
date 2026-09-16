@@ -9,6 +9,15 @@ export const runtime = "nodejs";
 
 const MAX_BYTES = 200 * 1024 * 1024;
 
+/** Types MIME vidéo acceptés — alignés sur le bucket R2/Storage. */
+const ALLOWED_VIDEO_TYPES = new Set([
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-m4v",
+  "video/mpeg",
+]);
+
 const bodySchema = z.object({
   contentType: z.string().min(1),
   fileName: z.string().max(255).optional(),
@@ -18,7 +27,7 @@ const bodySchema = z.object({
 export async function POST(req: Request) {
   try {
     const ip = clientIp(req);
-    const rl = rateLimit(`presign:${ip}`, { limit: 20, windowMs: 60_000 });
+    const rl = await rateLimit(`presign:${ip}`, { limit: 20, windowMs: 60_000 });
     if (!rl.ok) {
       return NextResponse.json(
         { error: "Trop de requêtes. Réessaie plus tard." },
@@ -47,9 +56,9 @@ export async function POST(req: Request) {
     }
 
     const { contentType, fileName, size } = parsed.data;
-    if (!contentType.startsWith("video/")) {
+    if (!ALLOWED_VIDEO_TYPES.has(contentType)) {
       return NextResponse.json(
-        { error: "Seuls les fichiers vidéo sont acceptés." },
+        { error: "Type de vidéo non accepté (mp4, webm, mov, m4v, mpg)." },
         { status: 400 },
       );
     }
