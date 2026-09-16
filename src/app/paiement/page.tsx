@@ -69,6 +69,7 @@ function PaiementContent() {
   const [polling, setPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [externalRef, setExternalRef] = useState<string | null>(null);
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -177,6 +178,7 @@ function PaiementContent() {
         externalRef?: string;
         transactionId?: string | null;
         otpRequired?: boolean;
+        redirectUrl?: string | null;
         ussdCode?: string | null;
         status?: string;
         activated?: boolean;
@@ -221,6 +223,12 @@ function PaiementContent() {
 
       setExternalRef(data.externalRef ?? ref);
       setUssdCode(data.ussdCode ?? null);
+      // Certains opérateurs (ex: Wave) exigent une validation via une page
+      // externe — la doc impose d'ouvrir cette URL pour l'utilisateur.
+      if (data.redirectUrl) {
+        setRedirectUrl(data.redirectUrl);
+        window.open(data.redirectUrl, "_blank", "noopener,noreferrer");
+      }
       startPolling(ref);
     } catch {
       setError("Erreur réseau. Vérifie ta connexion et réessaie.");
@@ -403,14 +411,24 @@ function PaiementContent() {
             )}
 
             {polling && (
-              <p className="mt-3 rounded-2xl bg-zinc-50 px-3 py-2 text-center text-xs font-medium text-zinc-600">
+              <div className="mt-3 rounded-2xl bg-zinc-50 px-3 py-2 text-center text-xs font-medium text-zinc-600">
                 En attente de confirmation sur ton téléphone…
                 {externalRef ? (
                   <span className="mt-1 block font-mono text-[10px] text-zinc-400">
                     {externalRef}
                   </span>
                 ) : null}
-              </p>
+                {redirectUrl && (
+                  <a
+                    href={redirectUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 block font-semibold text-zinc-900 underline"
+                  >
+                    Si la page de validation ne s&apos;est pas ouverte, clique ici
+                  </a>
+                )}
+              </div>
             )}
 
             <button

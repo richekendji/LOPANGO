@@ -74,7 +74,11 @@ export async function GET(request: Request) {
       rejected,
       transactionId: tx.transaction_id ?? null,
     });
-  } catch {
+  } catch (err) {
+    console.error(
+      "[paiement/status] verification failed:",
+      err instanceof Error ? err.message : err,
+    );
     return NextResponse.json(
       { error: "Impossible de vérifier le paiement." },
       { status: 502 },

@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
 
   let payload: {
     transaction_id?: string;
-    external_ref?: string;
+    external_reference?: string;
+    external_ref?: string; // tolérance ancien format
     status?: string;
   };
   try {
@@ -42,7 +43,8 @@ export async function POST(request: NextRequest) {
   const status = String(payload.status ?? "").toLowerCase();
   const approved =
     status === "approved" || status === "success" || status === "paid";
-  const ref = payload.external_ref ?? "";
+  // Doc SebPay v2 : le champ s'appelle external_reference.
+  const ref = payload.external_reference ?? payload.external_ref ?? "";
   const match = REF_RE.exec(ref);
 
   if (approved && match) {

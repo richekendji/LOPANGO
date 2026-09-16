@@ -122,6 +122,8 @@ export async function POST(request: Request) {
       transactionId: result.transaction_id ?? null,
       status: result.status ?? "pending",
       otpRequired: Boolean(result.otp_required),
+      // Wave / certains opérateurs : rediriger l'utilisateur pour valider.
+      redirectUrl: result.redirect_url ?? null,
       ussdCode: result.ussd_code ?? null,
       message: result.message ?? null,
       amount,
@@ -129,7 +131,12 @@ export async function POST(request: Request) {
       contexte,
       retour,
     });
-  } catch {
+  } catch (err) {
+    // Log serveur complet — visible dans Vercel > Functions > Logs.
+    console.error(
+      "[paiement/create] initiation failed:",
+      err instanceof Error ? err.message : err,
+    );
     return NextResponse.json(
       { error: "Échec de l’initiation du paiement." },
       { status: 502 },
