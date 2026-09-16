@@ -411,13 +411,8 @@ function PaiementContent() {
             )}
 
             {polling && (
-              <div className="mt-3 rounded-2xl bg-zinc-50 px-3 py-2 text-center text-xs font-medium text-zinc-600">
-                En attente de confirmation sur ton téléphone…
-                {externalRef ? (
-                  <span className="mt-1 block font-mono text-[10px] text-zinc-400">
-                    {externalRef}
-                  </span>
-                ) : null}
+              <div className="mt-3 rounded-2xl bg-zinc-50 px-3 py-2 text-center text-xs font-semibold text-zinc-700">
+                Confirme le paiement sur ton téléphone
                 {redirectUrl && (
                   <a
                     href={redirectUrl}
