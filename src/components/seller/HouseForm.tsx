@@ -196,7 +196,7 @@ export function HouseForm({
     const isOwn = Boolean(entered && entered === agentPhone);
     setPhoneWarning(
       isOwn
-        ? "⚠️ C'est TON numéro de démarcheur. Mets le VRAI numéro du propriétaire — sinon les locataires t'appelleront toi."
+        ? "⚠️ C'est TON numéro de démarcheur. Mets le VRAI numéro du propriétaire et non le tien — tu es en train de rompre le contrat de manière malhonnête."
         : null,
     );
     return isOwn;
@@ -390,7 +390,7 @@ export function HouseForm({
     // Démarcheur : interdit de publier avec SON propre numéro
     if (isAgent && checkOwnPhone(house.phone)) {
       showError(
-        "Tu ne peux pas mettre ton propre numéro. Mets le VRAI numéro du propriétaire.",
+        "C'est TON numéro de démarcheur. Mets le VRAI numéro du propriétaire et non le tien — tu es en train de rompre le contrat de manière malhonnête.",
       );
       return;
     }
