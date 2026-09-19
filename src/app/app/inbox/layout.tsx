@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Messages",
-  description: "Vos messages et demandes de contact sur LOPANGO.",
+  title: "Réclamations",
+  description: "Fais ta réclamation auprès de l'équipe LOPANGO.",
   path: "/app/inbox",
 });
 

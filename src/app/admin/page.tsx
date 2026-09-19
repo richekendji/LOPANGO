@@ -25,12 +25,20 @@ export default async function AdminPage() {
         <StatCard label="Propriétaires" value={stats.owners} />
       </div>
 
-      <Link
-        href="/app"
-        className="flex w-full items-center justify-center rounded-2xl bg-white py-3 text-sm font-semibold text-zinc-900 shadow-sm"
-      >
-        Voir le feed des maisons
-      </Link>
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href="/admin/reclamations"
+          className="flex w-full items-center justify-center rounded-2xl bg-zinc-900 py-3 text-sm font-semibold text-white shadow-sm"
+        >
+          Réclamations
+        </Link>
+        <Link
+          href="/app"
+          className="flex w-full items-center justify-center rounded-2xl bg-white py-3 text-sm font-semibold text-zinc-900 shadow-sm"
+        >
+          Voir le feed des maisons
+        </Link>
+      </div>
 
       <AdminUsersBoard users={users} />
     </div>

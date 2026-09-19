@@ -1,205 +1,150 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  newId,
-  type ContactRequest,
-  type SellerHouse,
-} from "@/lib/mock/houses";
-import {
-  deleteContact,
-  getContacts,
-  getHouses,
-  saveContact,
-  subscribeStore,
-} from "@/lib/mock/store";
-import { SelectField } from "@/components/SelectField";
+  createReclamation,
+  getMyReclamations,
+  type ReclamationRow,
+} from "@/app/actions/reclamations";
+
+const STATUS_LABEL: Record<
+  string,
+  { label: string; className: string }
+> = {
+  open: { label: "En attente", className: "bg-amber-50 text-amber-700" },
+  in_progress: { label: "En cours", className: "bg-blue-50 text-blue-700" },
+  resolved: { label: "Résolue", className: "bg-emerald-50 text-emerald-700" },
+};
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function InboxPage() {
-  const [contacts, setContacts] = useState<ContactRequest[]>([]);
-  const [houses, setHouses] = useState<SellerHouse[]>([]);
-  const [editing, setEditing] = useState<ContactRequest | null>(null);
-  const [form, setForm] = useState({
-    name: "",
-    phone: "+242 ",
-    message: "",
-    houseId: "",
-  });
+  const [reclamations, setReclamations] = useState<ReclamationRow[]>([]);
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    const refresh = () => {
-      const h = getHouses();
-      setHouses(h);
-      setContacts(getContacts());
-      setForm((f) => ({
-        ...f,
-        houseId: f.houseId || h[0]?.id || "",
-      }));
-    };
-    refresh();
-    return subscribeStore(refresh);
+    void getMyReclamations().then(setReclamations);
   }, []);
 
-  function resetForm() {
-    setEditing(null);
-    setForm({
-      name: "",
-      phone: "+242 ",
-      message: "",
-      houseId: houses[0]?.id || "",
-    });
-  }
-
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim() || !form.message.trim() || !form.houseId) return;
-    const contact: ContactRequest = {
-      id: editing?.id ?? newId("c"),
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      message: form.message.trim(),
-      houseId: form.houseId,
-      createdAt: editing?.createdAt ?? "À l'instant",
-    };
-    saveContact(contact);
-    resetForm();
-  }
+    setError(null);
+    setSuccess(false);
+    setSending(true);
+    const fd = new FormData();
+    fd.set("subject", subject);
+    fd.set("message", message);
+    const res = await createReclamation(fd);
+    setSending(false);
 
-  function startEdit(c: ContactRequest) {
-    setEditing(c);
-    setForm({
-      name: c.name,
-      phone: c.phone,
-      message: c.message,
-      houseId: c.houseId,
-    });
-  }
-
-  function onDelete(id: string) {
-    if (!confirm("Supprimer cette demande ?")) return;
-    deleteContact(id);
+    if (!res.ok) {
+      setError(res.error ?? "Erreur. Réessaie.");
+      return;
+    }
+    setSubject("");
+    setMessage("");
+    setSuccess(true);
+    const fresh = await getMyReclamations();
+    setReclamations(fresh);
   }
 
   const field =
     "w-full rounded-2xl border border-[#ebebeb] bg-white px-4 py-3 text-sm outline-none focus:border-zinc-400";
 
   return (
-      <div className="px-4 pb-4">
-        <h1 className="text-lg font-bold text-zinc-900">Messages</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Demandes des locataires intéressés par vos maisons.
-        </p>
+    <div className="px-4 pb-4">
+      <h1 className="text-lg font-bold text-zinc-900">Réclamation</h1>
+      <p className="mt-1 text-sm text-zinc-500">
+        Un problème avec une annonce, un démarcheur ou ton compte ? Écris-nous —
+        l&apos;équipe LOPANGO te répond.
+      </p>
 
-        <form
-          onSubmit={onSubmit}
-          className="mt-5 space-y-3 rounded-[1.5rem] bg-white p-4 shadow-sm"
-        >
-          <p className="text-sm font-bold text-zinc-900">
-            {editing ? "Modifier la demande" : "Ajouter un contact test"}
+      <form
+        onSubmit={onSubmit}
+        className="mt-5 space-y-3 rounded-[1.5rem] bg-white p-4 shadow-sm"
+      >
+        <p className="text-sm font-bold text-zinc-900">Nouvelle réclamation</p>
+        <input
+          className={field}
+          placeholder="Objet (ex : une annonce utilise mes photos)"
+          maxLength={120}
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          required
+        />
+        <textarea
+          className={`${field} min-h-32`}
+          placeholder="Explique ton problème (10 caractères minimum)…"
+          maxLength={2000}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          required
+        />
+        {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+        {success && (
+          <p className="text-xs font-semibold text-emerald-700">
+            Réclamation envoyée ✅ L&apos;équipe te répondra ici.
           </p>
-          <input
-            className={field}
-            placeholder="Nom"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-          />
-          <input
-            className={field}
-            placeholder="Téléphone"
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          />
-          <SelectField
-            value={form.houseId}
-            onChange={(e) => setForm({ ...form, houseId: e.target.value })}
-            required
-          >
-            {houses.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.title}
-              </option>
-            ))}
-          </SelectField>
-          <textarea
-            className={`${field} min-h-24`}
-            placeholder="Message"
-            value={form.message}
-            onChange={(e) => setForm({ ...form, message: e.target.value })}
-            required
-          />
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              className="flex-1 rounded-full bg-zinc-900 py-3 text-sm font-semibold text-white"
-            >
-              {editing ? "Enregistrer" : "Ajouter"}
-            </button>
-            {editing && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-full border border-[#ebebeb] px-4 py-3 text-sm font-semibold"
-              >
-                Annuler
-              </button>
-            )}
-          </div>
-        </form>
+        )}
+        <button
+          type="submit"
+          disabled={sending}
+          className="w-full rounded-full bg-zinc-900 py-3 text-sm font-semibold text-white disabled:opacity-50"
+        >
+          {sending ? "Envoi…" : "Envoyer ma réclamation"}
+        </button>
+      </form>
 
-        <div className="mt-6 space-y-3">
-          {contacts.length === 0 ? (
-            <p className="py-8 text-center text-sm text-zinc-500">
-              Aucune demande pour le moment.
-            </p>
-          ) : (
-            contacts.map((c) => {
-              const house = houses.find((h) => h.id === c.houseId);
-              return (
-                <article
-                  key={c.id}
-                  className="rounded-[1.5rem] bg-white p-4 shadow-sm"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-zinc-900">{c.name}</p>
-                      <p className="text-xs text-zinc-500">{c.phone}</p>
-                    </div>
-                    <span className="text-[11px] text-zinc-400">
-                      {c.createdAt}
-                    </span>
+      <div className="mt-6 space-y-3">
+        <p className="text-sm font-bold text-zinc-900">Mes réclamations</p>
+        {reclamations.length === 0 ? (
+          <p className="py-8 text-center text-sm text-zinc-500">
+            Aucune réclamation pour le moment.
+          </p>
+        ) : (
+          reclamations.map((r) => {
+            const st = STATUS_LABEL[r.status] ?? STATUS_LABEL.open;
+            return (
+              <article
+                key={r.id}
+                className="rounded-[1.5rem] bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-semibold text-zinc-900">{r.subject}</p>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${st.className}`}
+                  >
+                    {st.label}
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] text-zinc-400">
+                  {formatDate(r.created_at)}
+                </p>
+                <p className="mt-2 text-sm text-zinc-600">{r.message}</p>
+                {r.admin_reply && (
+                  <div className="mt-3 rounded-2xl bg-zinc-50 p-3">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-500">
+                      Réponse LOPANGO
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-700">{r.admin_reply}</p>
                   </div>
-                  <p className="mt-2 text-sm text-zinc-600">{c.message}</p>
-                  {house && (
-                    <Link
-                      href={`/dashboard/houses/${house.id}`}
-                      className="mt-2 inline-block text-xs font-semibold text-zinc-900 underline"
-                    >
-                      {house.title} →
-                    </Link>
-                  )}
-                  <div className="mt-3 flex gap-3 text-xs font-semibold">
-                    <button
-                      type="button"
-                      onClick={() => startEdit(c)}
-                      className="text-zinc-700"
-                    >
-                      Modifier
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(c.id)}
-                      className="text-red-600"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                </article>
-              );
-            })
-          )}
-        </div>
+                )}
+              </article>
+            );
+          })
+        )}
       </div>
+    </div>
   );
 }

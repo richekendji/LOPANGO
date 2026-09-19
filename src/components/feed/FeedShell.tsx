@@ -18,7 +18,7 @@ const BASE_TABS = [
     icon: "publish" as const,
     publish: true as const,
   },
-  { href: "/app/inbox", label: "Messages", icon: "inbox" as const },
+  { href: "/app/inbox", label: "Réclamation", icon: "inbox" as const },
   { href: "/app/profile", label: "Profil", icon: "user" as const },
 ];
 

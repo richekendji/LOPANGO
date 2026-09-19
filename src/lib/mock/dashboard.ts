@@ -100,7 +100,7 @@ export const NAV_ITEMS = [
   { href: "/app", label: "Accueil", icon: "home" },
   { href: "/app/search", label: "Recherche", icon: "search" },
   { href: "/app/saved", label: "Favoris", icon: "heart" },
-  { href: "/app/inbox", label: "Messages", icon: "inbox" },
+  { href: "/app/inbox", label: "Réclamation", icon: "inbox" },
   { href: "/dashboard/houses", label: "Mes maisons", icon: "building" },
   { href: "/dashboard/profile", label: "Profil", icon: "user" },
 ] as const;
