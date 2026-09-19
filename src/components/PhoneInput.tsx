@@ -16,7 +16,7 @@ type Props = {
   name?: string;
 };
 
-/** Saisie numéro Congo : préfixe 06/05 + local 123 45 67 */
+/** Saisie numéro Congo : préfixe 06 / 05 / 04 + local 123 45 67 */
 export function PhoneInput({
   defaultPrefix = "06",
   defaultLocal = "",
@@ -41,6 +41,7 @@ export function PhoneInput({
         >
           <option value="06">06</option>
           <option value="05">05</option>
+          <option value="04">04</option>
         </SelectField>
         <input
           type="tel"

@@ -62,7 +62,7 @@ export async function addAgent(
 
   const phone = normalizePhone(phoneRaw);
   if (!phone) {
-    return { ok: false, error: "Numéro invalide. Format : 06 ou 05 + 123 45 67." };
+    return { ok: false, error: "Numéro invalide. Format : 06, 05 ou 04 + 123 45 67." };
   }
 
   const admin = createAdminClient();

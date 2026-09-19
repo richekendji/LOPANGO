@@ -19,7 +19,7 @@ export const metadata: Metadata = pageMetadata({
 
 const ERRORS: Record<string, string> = {
   "missing-fields": "Veuillez remplir tous les champs.",
-  "invalid-phone": "Numéro invalide. Format : 06 ou 05 + 123 45 67.",
+  "invalid-phone": "Numéro invalide. Format : 06, 05 ou 04 + 123 45 67.",
   "weak-password": "Le mot de passe doit contenir au moins 8 caractères.",
   "password-mismatch": "Les mots de passe ne correspondent pas.",
   "phone-taken":

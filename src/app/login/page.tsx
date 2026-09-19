@@ -21,7 +21,7 @@ export const metadata: Metadata = pageMetadata({
 
 const ERRORS: Record<string, string> = {
   "missing-fields": "Veuillez remplir tous les champs.",
-  "invalid-phone": "Numéro invalide. Format : 06 ou 05 + 123 45 67.",
+  "invalid-phone": "Numéro invalide. Format : 06, 05 ou 04 + 123 45 67.",
   "bad-credentials": "Numéro ou mot de passe incorrect.",
   "account-exists": "Un compte existe déjà avec ce numéro — connecte-toi avec ton mot de passe.",
   "reset-link-invalid": "Lien de réinitialisation invalide ou expiré.",

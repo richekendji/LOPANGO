@@ -1,5 +1,7 @@
-/** Préfixe Mobile Money Congo : 06 (MTN) ou 05 (Airtel). */
-export type PhonePrefix = "06" | "05";
+/** Préfixe Mobile Money Congo : 06 (MTN), 05 (Airtel) ou 04. */
+export type PhonePrefix = "06" | "05" | "04";
+
+export const PHONE_PREFIXES: PhonePrefix[] = ["06", "05", "04"];
 
 /** Digits only, ex: 061234567 */
 export function digitsOnly(value: string): string {
@@ -24,7 +26,7 @@ export function formatPhoneDisplay(prefix: PhonePrefix, localDigits: string): st
 }
 
 /**
- * Normalise une saisie quelconque vers 9 chiffres (06/05 + 7).
+ * Normalise une saisie quelconque vers 9 chiffres (06/05/04 + 7).
  * Accepte "06 123 45 67", "061234567", "+242061234567", etc.
  */
 export function normalizePhone(input: string): string | null {
@@ -32,7 +34,10 @@ export function normalizePhone(input: string): string | null {
   if (d.startsWith("242") && d.length >= 12) {
     d = d.slice(3);
   }
-  if (d.length === 9 && (d.startsWith("06") || d.startsWith("05"))) {
+  if (
+    d.length === 9 &&
+    (d.startsWith("06") || d.startsWith("05") || d.startsWith("04"))
+  ) {
     return d;
   }
   return null;

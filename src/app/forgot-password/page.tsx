@@ -17,7 +17,7 @@ export const metadata: Metadata = pageMetadata({
 
 const ERRORS: Record<string, string> = {
   "invalid-email": "Adresse email invalide.",
-  "invalid-phone": "Numéro invalide. Format : 06 ou 05 + 123 45 67.",
+  "invalid-phone": "Numéro invalide. Format : 06, 05 ou 04 + 123 45 67.",
   config: "Configuration serveur incomplète.",
   "rate-limit": "Trop de tentatives. Réessayez plus tard.",
 };

@@ -10,7 +10,7 @@ const STEPS = [
   {
     n: "01",
     title: "Créer ton compte",
-    body: "Prénom, numéro 06/05, mot de passe — tu entres directement dans l’app.",
+    body: "Prénom, numéro 06/05/04, mot de passe — tu entres directement dans l’app.",
     Visual: VisualHelix,
   },
   {
