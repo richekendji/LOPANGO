@@ -29,6 +29,8 @@ import {
   resolveVideoUrl,
 } from "@/lib/video";
 import { SelectField } from "@/components/SelectField";
+import { normalizePhone } from "@/lib/phone";
+import { registerAgentHouse } from "@/app/actions/agents";
 
 type FormState = {
   description: string;
@@ -153,11 +155,18 @@ export function HouseForm({
   const [videoLoading, setVideoLoading] = useState(false);
   const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [isAgent, setIsAgent] = useState(false);
+  const [phoneWarning, setPhoneWarning] = useState<string | null>(null);
 
   const priceNum = Number(form.price.replace(/\s/g, "")) || 0;
 
   useEffect(() => {
     setReady(true);
+    // Statut démarcheur : publication sans paywall + message « vrai numéro ».
+    fetch("/api/agent/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { agent?: boolean } | null) => setIsAgent(Boolean(d?.agent)))
+      .catch(() => setIsAgent(false));
   }, []);
 
   useEffect(() => {
@@ -167,6 +176,22 @@ export function HouseForm({
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+    // Agent : si le numéro saisi est le sien, rappeler la règle du vrai numéro
+    if (key === "phone" && isAgent && typeof value === "string") {
+      const phoneValue = value;
+      void fetch("/api/agent/me", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { agentPhone?: string } | null) => {
+          const entered = normalizePhone(phoneValue);
+          const mine = d?.agentPhone ? normalizePhone(d.agentPhone) : null;
+          setPhoneWarning(
+            entered && mine && entered === mine
+              ? "⚠️ C'est TON numéro. Mets le VRAI numéro du propriétaire, pas le tien — sinon les locataires t'appelleront toi."
+              : null,
+          );
+        })
+        .catch(() => setPhoneWarning(null));
+    }
   }
 
   function showError(message: string) {
@@ -347,7 +372,7 @@ export function HouseForm({
     const house = buildHouse(status);
     if (!house) return;
 
-    if (status === "active") {
+    if (status === "active" && !isAgent) {
       const active = await refreshSubscriptionStatus();
       if (!active) {
         saveHouseFormDraft(form, draftId);
@@ -362,6 +387,11 @@ export function HouseForm({
     saveHouse(house);
     clearHouseFormDraft(draftId);
     if (!draftId) clearHouseFormDraft(null);
+    // Démarcheur : lie l'annonce à son compte (commission 4 500 à la 1ʳᵉ
+    // conversion payante + accès gratuit à SA propre annonce).
+    if (isAgent) {
+      void registerAgentHouse(house.id);
+    }
     // Lead : une maison vient d'être publiée (conversion côté propriétaire).
     if (status === "active") {
       fbqTrack("Lead", {
@@ -585,6 +615,11 @@ export function HouseForm({
             onChange={(e) => update("phone", e.target.value)}
             placeholder="+242 06 …"
           />
+          {phoneWarning && (
+            <span className="block rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+              {phoneWarning}
+            </span>
+          )}
         </label>
       </div>
 

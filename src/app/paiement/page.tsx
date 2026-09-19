@@ -51,6 +51,8 @@ function PaiementContent() {
   const searchParams = useSearchParams();
   const retour = searchParams.get("retour") || "/app";
   const contexte = searchParams.get("contexte") || "voir";
+  // Annonce d'origine du paiement → attribution commission démarcheur.
+  const houseId = searchParams.get("house") || undefined;
   const isPublier = contexte === "publier";
   const backHref = isPublier
     ? "/app"
@@ -170,6 +172,7 @@ function PaiementContent() {
           otpCode: needOtp ? otpCode : undefined,
           contexte,
           retour,
+          houseId,
         }),
       });
       const data = (await res.json()) as {

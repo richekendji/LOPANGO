@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { FeedShell } from "@/components/feed/FeedShell";
+import { getCurrentAgent } from "@/lib/agents";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -9,6 +10,14 @@ export const metadata: Metadata = pageMetadata({
   path: "/app",
 });
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return <FeedShell>{children}</FeedShell>;
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Un démarcheur (liste blanche) voit « Retirer » à la place de
+  // « Réclamation » et publie sans paywall.
+  const agent = await getCurrentAgent();
+
+  return <FeedShell isAgent={Boolean(agent)}>{children}</FeedShell>;
 }

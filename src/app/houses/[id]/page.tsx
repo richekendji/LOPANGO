@@ -17,12 +17,14 @@ import {
   saveHouse,
   subscribeStore,
 } from "@/lib/mock/store";
+import { canAgentViewHouse } from "@/app/actions/agents";
 
 function HousePublicContent() {
   const { id } = useParams<{ id: string }>();
   const [house, setHouse] = useState<SellerHouse | null>(null);
   const [subscribed, setSubscribed] = useState(false);
-  const unlocked = subscribed;
+  const [agentOwn, setAgentOwn] = useState(false);
+  const unlocked = subscribed || agentOwn;
   const [composeOpen, setComposeOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
@@ -35,6 +37,8 @@ function HousePublicContent() {
     };
     refresh();
     void refreshSubscriptionStatus().then(setSubscribed);
+    // Un agent voit gratuitement uniquement SES annonces.
+    void canAgentViewHouse(id).then((ok) => setAgentOwn(ok));
     return subscribeStore(refresh);
   }, [id]);
 
@@ -273,7 +277,7 @@ function HousePublicContent() {
                   Débloque l&apos;adresse exacte et le numéro du propriétaire
                 </p>
                 <Link
-                  href={`/paiement?retour=${encodeURIComponent(`/houses/${house.id}`)}`}
+                  href={`/paiement?retour=${encodeURIComponent(`/houses/${house.id}`)}&house=${encodeURIComponent(house.id)}`}
                   className="mt-4 flex w-full max-w-sm items-center justify-center rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white shadow-md active:opacity-90"
                 >
                   Débloquer le contact

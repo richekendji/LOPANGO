@@ -33,6 +33,15 @@ export default async function AdminPage() {
           Réclamations
         </Link>
         <Link
+          href="/admin/agents"
+          className="flex w-full items-center justify-center rounded-2xl bg-white py-3 text-sm font-semibold text-zinc-900 shadow-sm"
+        >
+          Démarcheurs
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2">
+        <Link
           href="/app"
           className="flex w-full items-center justify-center rounded-2xl bg-white py-3 text-sm font-semibold text-zinc-900 shadow-sm"
         >

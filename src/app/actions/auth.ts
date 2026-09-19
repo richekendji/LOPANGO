@@ -12,6 +12,14 @@ import {
 import { redirect } from "next/navigation";
 import { postLoginPath } from "@/lib/admin";
 import { rateLimit } from "@/lib/rate-limit";
+import { findAgentByPhone } from "@/lib/agents";
+
+/** Page « crée ton mot de passe » pour un agent qui se connecte pour la 1ʳᵉ fois. */
+function agentFirstLogin(phone: string): never {
+  redirect(
+    `/agent/activation?phone=${encodeURIComponent(phone)}`,
+  );
+}
 
 const MIN_PASSWORD = 8;
 
@@ -153,6 +161,23 @@ export async function signIn(formData: FormData) {
     password,
   });
 
+  // Agent en liste blanche sans compte existant : premier accès =
+  // création de mot de passe (pas d'inscription classique).
+  if (error) {
+    const agent = await findAgentByPhone(phone);
+    if (agent) {
+      const admin = createAdminClient();
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("phone", phone)
+        .maybeSingle();
+      if (!profile) {
+        agentFirstLogin(phone);
+      }
+    }
+  }
+
   // Comptes dont l’email auth a été basculé vers l’email de récupération
   if (error && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     const admin = createAdminClient();
@@ -271,4 +296,102 @@ export async function updatePassword(formData: FormData) {
       ? user.user_metadata.phone
       : null;
   redirect(postLoginPath(metaPhone));
+}
+
+/**
+ * Activation du compte démarcheur : depuis /agent/activation, le premier
+ * accès crée le compte auth + profil à partir du numéro de la liste blanche.
+ * (Le numéro a déjà été vérifié comme agent actif dans signIn.)
+ */
+export async function activateAgentAccount(formData: FormData) {
+  const phone = normalizePhone(String(formData.get("phone") ?? ""));
+  const password = String(formData.get("password") ?? "");
+  const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
+  const label = String(formData.get("label") ?? "").trim();
+
+  if (!phone) redirect("/agent/activation?error=invalid-phone");
+
+  // Toujours vérifier que le numéro est bien un agent actif (liste blanche)
+  const agent = await findAgentByPhone(phone);
+  if (!agent) {
+    redirect("/agent/activation?error=not-agent");
+  }
+
+  if (password.length < MIN_PASSWORD) {
+    redirect(`/agent/activation?phone=${encodeURIComponent(phone)}&error=weak-password`);
+  }
+  if (password !== passwordConfirm) {
+    redirect(
+      `/agent/activation?phone=${encodeURIComponent(phone)}&error=password-mismatch`,
+    );
+  }
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    redirect(`/agent/activation?phone=${encodeURIComponent(phone)}&error=config`);
+  }
+
+  const rl = await rateLimit(`agent-activation:${phone}`, {
+    limit: 5,
+    windowMs: 60 * 60_000,
+  });
+  if (!rl.ok) {
+    redirect(`/agent/activation?phone=${encodeURIComponent(phone)}&error=rate-limit`);
+  }
+
+  const admin = createAdminClient();
+  const authEmail = phoneToAuthEmail(phone);
+
+  // Le profil existe déjà ? → le compte existe : retour à la connexion
+  const { data: existingProfile } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("phone", phone)
+    .maybeSingle();
+  if (existingProfile) {
+    loginError("account-exists");
+  }
+
+  const displayName = label || `Démarcheur ${agent.phone}`;
+
+  const { data, error: createError } = await admin.auth.admin.createUser({
+    email: authEmail,
+    password,
+    email_confirm: true,
+    user_metadata: {
+      full_name: displayName,
+      phone,
+    },
+  });
+
+  if (createError || !data.user) {
+    const msg = createError?.message ?? "";
+    if (/already|registered|exists/i.test(msg)) {
+      loginError("account-exists");
+    }
+    redirect(`/agent/activation?phone=${encodeURIComponent(phone)}&error=signup-failed`);
+  }
+
+  const { error: profileError } = await admin.from("profiles").upsert({
+    id: data.user.id,
+    email: null,
+    full_name: displayName,
+    phone,
+    role: "tenant",
+  });
+
+  if (profileError) {
+    await admin.auth.admin.deleteUser(data.user.id);
+    redirect(`/agent/activation?phone=${encodeURIComponent(phone)}&error=signup-failed`);
+  }
+
+  const supabase = await createClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: authEmail,
+    password,
+  });
+  if (signInError) {
+    redirect("/login?error=bad-credentials");
+  }
+
+  redirect("/app");
 }

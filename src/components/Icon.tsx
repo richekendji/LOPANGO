@@ -20,7 +20,8 @@ type IconName =
   | "bookmark"
   | "message"
   | "eye"
-  | "eyeOff";
+  | "eyeOff"
+  | "wallet";
 
 export function Icon({
   name,
@@ -192,6 +193,14 @@ export function Icon({
           <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
           <path d="M9.9 5.1A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a16.7 16.7 0 0 1-3.1 4.1" />
           <path d="M6.1 6.1A16.4 16.4 0 0 0 2 12s3.5 7 10 7a10.4 10.4 0 0 0 4.2-.9" />
+        </svg>
+      );
+    case "wallet":
+      return (
+        <svg {...common}>
+          <path d="M20 7H5a2 2 0 0 1 0-4h13v4" />
+          <path d="M4 5v13a2 2 0 0 0 2 2h14V7H6" />
+          <circle cx="16.5" cy="13.5" r="0.5" />
         </svg>
       );
     default:

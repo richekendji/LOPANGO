@@ -21,9 +21,16 @@ export default function NewHousePage() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const active = await refreshSubscriptionStatus();
+      const [active, isAgent] = await Promise.all([
+        refreshSubscriptionStatus(),
+        fetch("/api/agent/me", { cache: "no-store" })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d: { agent?: boolean } | null) => Boolean(d?.agent))
+          .catch(() => false),
+      ]);
       if (cancelled) return;
-      if (!active) {
+      // Les démarcheurs publient gratuitement (c'est leur travail).
+      if (!active && !isAgent) {
         router.replace(PAY_URL);
         setReady(true);
         return;

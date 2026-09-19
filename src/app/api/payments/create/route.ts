@@ -11,6 +11,7 @@ import { getSebPay, normalizeCongoPhone } from "@/lib/sebpay";
 import { createClient } from "@/lib/supabase/server";
 import { activateSubscriptionForUser } from "@/lib/subscription";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { recordPaymentIntent } from "@/lib/agents";
 
 const operatorSlugs = CONGO_OPERATORS.map((o) => o.slug) as [string, ...string[]];
 
@@ -21,6 +22,7 @@ const bodySchema = z.object({
   otpCode: z.string().max(20).optional(),
   contexte: z.string().max(40).optional(),
   retour: z.string().max(300).optional(),
+  houseId: z.string().max(80).optional(),
 });
 
 function safeRetour(raw: string | undefined): string {
@@ -103,6 +105,14 @@ export async function POST(request: Request) {
     const externalRef = `lopango_${period}_${user.id}_${Date.now()}_${Math.random()
       .toString(36)
       .slice(2, 8)}`;
+
+    // Mémorise l'annonce d'origine du paiement pour l'attribution
+    // de la commission agent au webhook (1ʳᵉ conversion = 4 500 FCFA).
+    await recordPaymentIntent({
+      externalRef,
+      userId: user.id,
+      houseId: parsed.data.houseId ?? null,
+    });
 
     const sebpay = getSebPay();
     const result = await sebpay.create({
