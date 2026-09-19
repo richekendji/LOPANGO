@@ -37,13 +37,16 @@ export async function GET(request: Request) {
   }
 
   const ref = parsed.data.ref;
-  // Ref doit contenir l’UUID de l’utilisateur connecté
-  if (!ref.includes(user.id) && !ref.startsWith("dev_")) {
+  // Ref doit contenir l’UUID de l’utilisateur connecté.
+  // Le préfixe "dev_" n’est valable qu’en local (NODE_ENV=development) :
+  // en production il ne doit JAMAIS valider un paiement.
+  const isDevRef = ref.startsWith("dev_") && process.env.NODE_ENV === "development";
+  if (!ref.includes(user.id) && !isDevRef) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 403 });
   }
 
   try {
-    if (ref.startsWith("dev_")) {
+    if (isDevRef) {
       return NextResponse.json({
         status: "approved",
         approved: true,
