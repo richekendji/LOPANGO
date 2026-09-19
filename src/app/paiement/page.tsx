@@ -52,7 +52,12 @@ function PaiementContent() {
   const retour = searchParams.get("retour") || "/app";
   const contexte = searchParams.get("contexte") || "voir";
   // Annonce d'origine du paiement → attribution commission démarcheur.
-  const houseId = searchParams.get("house") || undefined;
+  // Fallback : extraire l'id depuis /houses/[id] dans le retour.
+  const houseFromRetour = (() => {
+    const m = /^\/houses\/([^/?#]+)/.exec(retour);
+    return m?.[1];
+  })();
+  const houseId = searchParams.get("house") || houseFromRetour || undefined;
   const isPublier = contexte === "publier";
   const backHref = isPublier
     ? "/app"

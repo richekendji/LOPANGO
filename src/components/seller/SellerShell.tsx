@@ -11,40 +11,57 @@ const PUBLISH_FORM = "/dashboard/houses/new";
 const PUBLISH_PAY =
   "/paiement?contexte=publier&retour=" + encodeURIComponent(PUBLISH_FORM);
 
-const TABS = [
-  { href: "/app", label: "Accueil", icon: "home" as const },
-  { href: "/dashboard/houses", label: "Annonces", icon: "building" as const },
-  {
-    href: PUBLISH_FORM,
-    label: "Publier",
-    icon: "publish" as const,
-    publish: true as const,
-  },
-  { href: "/app/inbox", label: "Messages", icon: "inbox" as const },
-  { href: "/app/profile", label: "Profil", icon: "user" as const },
-];
-
 function BottomNav() {
   const [subscribed, setSubscribed] = useState(false);
+  const [isAgent, setIsAgent] = useState(false);
 
   useEffect(() => {
     const refresh = () => setSubscribed(hasActiveSubscription());
     refresh();
     void refreshSubscriptionStatus().then(setSubscribed);
+    fetch("/api/agent/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { agent?: boolean } | null) => setIsAgent(Boolean(d?.agent)))
+      .catch(() => setIsAgent(false));
     return subscribeStore(refresh);
   }, []);
+
+  const tabs = useMemo(() => {
+    return [
+      { href: "/app", label: "Accueil", icon: "home" as const },
+      { href: "/dashboard/houses", label: "Annonces", icon: "building" as const },
+      {
+        href: PUBLISH_FORM,
+        label: "Publier",
+        icon: "publish" as const,
+        publish: true as const,
+      },
+      isAgent
+        ? {
+            href: "/app/gains",
+            label: "Retirer",
+            icon: "wallet" as const,
+          }
+        : {
+            href: "/app/inbox",
+            label: "Réclamation",
+            icon: "inbox" as const,
+          },
+      { href: "/app/profile", label: "Profil", icon: "user" as const },
+    ];
+  }, [isAgent]);
 
   const prefetchHrefs = useMemo(
     () => [
       "/app",
       "/dashboard/houses",
-      "/app/inbox",
+      isAgent ? "/app/gains" : "/app/inbox",
       "/app/profile",
       PUBLISH_FORM,
       "/paiement",
-      subscribed ? PUBLISH_FORM : PUBLISH_PAY,
+      isAgent || subscribed ? PUBLISH_FORM : PUBLISH_PAY,
     ],
-    [subscribed],
+    [subscribed, isAgent],
   );
 
   const { arm, isHot, pathname } = useInstantNav(prefetchHrefs);
@@ -52,9 +69,9 @@ function BottomNav() {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#ebebeb] bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-2">
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const href =
-            "publish" in tab && tab.publish
+            "publish" in tab && tab.publish && !isAgent
               ? subscribed
                 ? PUBLISH_FORM
                 : PUBLISH_PAY

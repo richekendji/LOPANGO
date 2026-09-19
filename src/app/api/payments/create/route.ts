@@ -11,7 +11,7 @@ import { getSebPay, normalizeCongoPhone } from "@/lib/sebpay";
 import { createClient } from "@/lib/supabase/server";
 import { activateSubscriptionForUser } from "@/lib/subscription";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { recordPaymentIntent } from "@/lib/agents";
+import { processAgentCommission, recordPaymentIntent } from "@/lib/agents";
 
 const operatorSlugs = CONGO_OPERATORS.map((o) => o.slug) as [string, ...string[]];
 
@@ -78,17 +78,32 @@ export async function POST(request: Request) {
 
     // Dev local : active l’abo sans SebPay (toujours lié à la session).
     if (process.env.NODE_ENV === "development") {
+      const externalRef = `dev_${period}_${user.id}_${Date.now()}`;
+      await recordPaymentIntent({
+        externalRef,
+        userId: user.id,
+        houseId: parsed.data.houseId ?? null,
+      });
       await activateSubscriptionForUser({
         userId: user.id,
         period,
-        transactionId: `dev_${Date.now()}`,
+        transactionId: externalRef,
         paymentMethod: "dev",
       });
+      // Même logique de commission qu'en prod (1ʳᵉ conversion = 4 500).
+      try {
+        await processAgentCommission({
+          externalRef,
+          userId: user.id,
+        });
+      } catch {
+        /* ne jamais bloquer l'activation */
+      }
       return NextResponse.json({
         ok: true,
         approved: true,
         activated: true,
-        externalRef: `dev_${period}_${user.id.slice(0, 8)}`,
+        externalRef,
         transactionId: null,
         status: "approved",
         amount: priceForPeriod(period),

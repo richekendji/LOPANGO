@@ -101,6 +101,7 @@ export const NAV_ITEMS = [
   { href: "/app/search", label: "Recherche", icon: "search" },
   { href: "/app/saved", label: "Favoris", icon: "heart" },
   { href: "/app/inbox", label: "Réclamation", icon: "inbox" },
+  { href: "/app/gains", label: "Retirer", icon: "wallet" },
   { href: "/dashboard/houses", label: "Mes maisons", icon: "building" },
   { href: "/dashboard/profile", label: "Profil", icon: "user" },
 ] as const;

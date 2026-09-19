@@ -413,7 +413,13 @@ export function HouseForm({
     // Démarcheur : lie l'annonce à son compte (commission 4 500 à la 1ʳᵉ
     // conversion payante + accès gratuit à SA propre annonce).
     if (isAgent) {
-      void registerAgentHouse(house.id);
+      const link = await registerAgentHouse(house.id);
+      if (!link.ok) {
+        showError(
+          "Annonce enregistrée en local, mais le lien commission a échoué. Réessaie de publier ou contacte LOPANGO.",
+        );
+        // On continue quand même vers la fiche : l'annonce est déjà sauvée.
+      }
     }
     // Lead : une maison vient d'être publiée (conversion côté propriétaire).
     if (status === "active") {
