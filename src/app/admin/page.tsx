@@ -28,14 +28,15 @@ export default async function AdminPage() {
       <div className="grid grid-cols-2 gap-2">
         <Link
           href="/admin/reclamations"
-          className="flex w-full items-center justify-center rounded-2xl bg-zinc-900 py-3 text-sm font-semibold text-white shadow-sm"
+          className="flex w-full items-center justify-center rounded-2xl bg-white py-3 text-sm font-semibold text-zinc-900 shadow-sm"
         >
           Réclamations
         </Link>
         <Link
           href="/admin/agents"
-          className="flex w-full items-center justify-center rounded-2xl bg-white py-3 text-sm font-semibold text-zinc-900 shadow-sm"
+          className="flex w-full items-center justify-center gap-1.5 rounded-2xl bg-zinc-900 py-3 text-sm font-semibold text-white shadow-sm"
         >
+          <span className="text-lg leading-none">+</span>
           Démarcheurs
         </Link>
       </div>

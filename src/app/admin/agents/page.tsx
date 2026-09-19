@@ -11,7 +11,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminAgentsPage() {
+export default async function AdminAgentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ added?: string }>;
+}) {
+  const params = await searchParams;
   const [agents, withdrawals] = await Promise.all([
     getAdminAgents(),
     getAdminWithdrawals(),
@@ -19,12 +24,20 @@ export default async function AdminAgentsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-lg font-bold text-zinc-900">Démarcheurs</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Liste blanche, commissions (4 500 / 1ʳᵉ conversion par annonce) et
-          retraits à valider.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-bold text-zinc-900">Démarcheurs</h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            Liste blanche, commissions (4 500 / 1ʳᵉ conversion) et retraits.
+          </p>
+        </div>
+        <Link
+          href="/admin/agents/new"
+          aria-label="Ajouter un démarcheur"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-2xl font-light leading-none text-white shadow-sm"
+        >
+          +
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -42,7 +55,11 @@ export default async function AdminAgentsPage() {
         </Link>
       </div>
 
-      <AdminAgentsBoard agents={agents} withdrawals={withdrawals} />
+      <AdminAgentsBoard
+        agents={agents}
+        withdrawals={withdrawals}
+        addedLabel={params.added ?? null}
+      />
     </div>
   );
 }

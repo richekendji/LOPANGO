@@ -72,6 +72,11 @@ export async function addAgent(
     .eq("phone", phone)
     .maybeSingle();
 
+  const agency = label.trim();
+  if (!agency) {
+    return { ok: false, error: "Le nom de l'agence est obligatoire." };
+  }
+
   if (existing) {
     if (existing.active) {
       return { ok: false, error: "Ce numéro est déjà démarcheur." };
@@ -79,7 +84,7 @@ export async function addAgent(
     // Réactivation d'un agent précédemment désactivé
     const { error } = await admin
       .from("agents")
-      .update({ active: true, label: label.trim() || null })
+      .update({ active: true, label: agency })
       .eq("id", existing.id);
     if (error) return { ok: false, error: "Erreur d'enregistrement." };
     return { ok: true };
@@ -87,7 +92,7 @@ export async function addAgent(
 
   const { error } = await admin.from("agents").insert({
     phone,
-    label: label.trim() || null,
+    label: agency,
     active: true,
   });
   if (error) {

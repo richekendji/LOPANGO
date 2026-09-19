@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
-  addAgent,
   deleteAgent,
   processWithdrawal,
   setAgentActive,
   type AgentAdminRow,
   type AdminWithdrawalRow,
 } from "@/app/actions/agents";
-import { displayNormalizedPhone, normalizePhone } from "@/lib/phone";
+import { displayNormalizedPhone } from "@/lib/phone";
 
 const W_STATUS: Record<string, { label: string; className: string }> = {
   pending: { label: "En attente", className: "bg-amber-50 text-amber-700" },
@@ -29,39 +29,16 @@ function formatDate(iso: string) {
 export function AdminAgentsBoard({
   agents,
   withdrawals,
+  addedLabel,
 }: {
   agents: AgentAdminRow[];
   withdrawals: AdminWithdrawalRow[];
+  addedLabel?: string | null;
 }) {
-  // --- Ajout d'un démarcheur ---
-  const [phone, setPhone] = useState("+242 ");
-  const [label, setLabel] = useState("");
-  const [addBusy, setAddBusy] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
-  const [addOk, setAddOk] = useState<string | null>(null);
-
-  async function onAdd(e: React.FormEvent) {
-    e.preventDefault();
-    setAddError(null);
-    setAddOk(null);
-    setAddBusy(true);
-    const res = await addAgent(phone, label);
-    setAddBusy(false);
-    if (!res.ok) {
-      setAddError(res.error ?? "Erreur.");
-      return;
-    }
-    const n = normalizePhone(phone);
-    setAddOk(
-      `Démarcheur ${n ? displayNormalizedPhone(n) : phone} ajouté ✅ Il peut maintenant se connecter avec ce numéro.`,
-    );
-    setPhone("+242 ");
-    setLabel("");
-    setTimeout(() => window.location.reload(), 900);
-  }
-
-  // --- Actions sur un agent ---
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [noteFor, setNoteFor] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+  const [wdBusy, setWdBusy] = useState(false);
 
   async function toggleAgent(id: string, active: boolean) {
     setBusyId(id);
@@ -77,11 +54,6 @@ export function AdminAgentsBoard({
     setBusyId(null);
     setTimeout(() => window.location.reload(), 300);
   }
-
-  // --- Validation des retraits ---
-  const [noteFor, setNoteFor] = useState<string | null>(null);
-  const [note, setNote] = useState("");
-  const [wdBusy, setWdBusy] = useState(false);
 
   async function decide(id: string, approve: boolean) {
     setWdBusy(true);
@@ -100,50 +72,22 @@ export function AdminAgentsBoard({
 
   return (
     <div className="space-y-6">
-      {/* Ajouter un démarcheur */}
-      <form
-        onSubmit={onAdd}
-        className="space-y-3 rounded-[1.5rem] bg-white p-4 shadow-sm"
+      {addedLabel && (
+        <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+          Démarcheur {addedLabel} ajouté ✅ Il peut se connecter avec ce numéro.
+        </p>
+      )}
+
+      {/* Bouton + bien visible */}
+      <Link
+        href="/admin/agents/new"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-zinc-900 py-4 text-sm font-semibold text-white shadow-sm"
       >
-        <p className="text-sm font-bold text-zinc-900">
-          Ajouter un démarcheur
-        </p>
-        <p className="text-xs text-zinc-500">
-          Son numéro pourra se connecter dès son premier essai : on lui demandera
-          de créer un mot de passe. Il publie gratuitement, gagne 4 500 FCFA par
-          annonce qui génère un premier abonné payant.
-        </p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <input
-            type="tel"
-            className={field}
-            placeholder="+242 06 123 45 67"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
-          <input
-            className={field}
-            placeholder="Nom / repère (optionnel)"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            maxLength={60}
-          />
-        </div>
-        {addError && (
-          <p className="text-xs font-semibold text-red-600">{addError}</p>
-        )}
-        {addOk && (
-          <p className="text-xs font-semibold text-emerald-700">{addOk}</p>
-        )}
-        <button
-          type="submit"
-          disabled={addBusy}
-          className="w-full rounded-full bg-zinc-900 py-3 text-sm font-semibold text-white disabled:opacity-50"
-        >
-          {addBusy ? "Ajout…" : "Ajouter à la liste blanche"}
-        </button>
-      </form>
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 text-lg leading-none">
+          +
+        </span>
+        Ajouter un démarcheur
+      </Link>
 
       {/* Liste des démarcheurs */}
       <div className="space-y-3">
@@ -157,7 +101,7 @@ export function AdminAgentsBoard({
         </div>
         {agents.length === 0 ? (
           <p className="rounded-2xl bg-white py-8 text-center text-sm text-zinc-500 shadow-sm">
-            Aucun démarcheur pour le moment.
+            Aucun démarcheur. Appuie sur « + » pour en ajouter un.
           </p>
         ) : (
           agents.map((a) => (
@@ -168,7 +112,7 @@ export function AdminAgentsBoard({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-semibold text-zinc-900">
-                    {a.label || "Démarcheur"}
+                    {a.label || "Agence"}
                   </p>
                   <p className="text-sm text-zinc-600">
                     {displayNormalizedPhone(a.phone)}
@@ -239,7 +183,7 @@ export function AdminAgentsBoard({
                       {formatFcfaSafe(w.amount)}
                     </p>
                     <p className="text-sm text-zinc-600">
-                      {w.agent_label || "Démarcheur"} ·{" "}
+                      {w.agent_label || "Agence"} ·{" "}
                       {w.agent_phone
                         ? displayNormalizedPhone(w.agent_phone)
                         : "?"}
