@@ -54,7 +54,7 @@ export const config = {
     "/app/:path*",
     "/dashboard/:path*",
     "/paiement/:path*",
-    "/houses/:path*",
+    // /houses/:path* est PUBLIC (SEO + aperçu) — le contact reste flouté sans abo.
     "/api/payments/:path*",
     "/api/videos/:path*",
     "/api/subscription/:path*",
