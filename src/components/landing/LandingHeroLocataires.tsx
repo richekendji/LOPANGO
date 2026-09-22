@@ -1,12 +1,8 @@
 "use client";
 
 /**
- * VERSION LOCATAIRES — sauvegarde du héro d'origine
- * ("La vie devient facile sans les démarcheurs").
- *
- * Utilisée pendant la campagne marketing propriétaires.
- * Pour revenir à cette version : dans LandingPage.tsx, remplacer
- * <LandingHero /> par <LandingHeroLocataires />.
+ * VERSION LOCATAIRES — même contenu que LandingHero (actif).
+ * Conservée pour bascule rapide avec LandingHeroProprietaires.
  */
 
 import Image from "next/image";
