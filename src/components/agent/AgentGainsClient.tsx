@@ -86,8 +86,10 @@ export function AgentGainsClient() {
     <div className="px-4 pb-4">
       <h1 className="text-lg font-bold text-zinc-900">Mes gains</h1>
       <p className="mt-1 text-sm text-zinc-500">
-        Tu gagnes {formatFcfa(data.commission)} quand un abonné payant arrive
-        grâce à l&apos;une de tes annonces — la première fois seulement.
+        Tu gagnes {formatFcfa(5000)} quand un abonné payant arrive grâce à
+        l&apos;une de tes annonces — la première fois seulement. Les opérateurs
+        Mobile Money prennent {formatFcfa(500)} sur la transaction : il te reste{" "}
+        {formatFcfa(4500)}.
       </p>
 
       {/* Compteurs */}
@@ -100,8 +102,8 @@ export function AgentGainsClient() {
             {formatFcfa(data.balance)}
           </p>
           <p className="mt-1 text-xs text-zinc-400">
-            Uniquement des commissions de {formatFcfa(data.commission)} — jamais
-            les frais d&apos;abonnement.
+            {formatFcfa(5000)} par annonce convertie, moins {formatFcfa(500)}{" "}
+            de frais opérateur — jamais les frais d&apos;abonnement.
           </p>
         </div>
         <StatCard label="Total gagné" value={data.total} />
@@ -120,8 +122,9 @@ export function AgentGainsClient() {
       >
         <p className="text-sm font-bold text-zinc-900">Demander un retrait</p>
         <p className="text-xs text-zinc-500">
-          Minimum {formatFcfa(4500)}. L&apos;équipe valide chaque demande
-          manuellement puis t&apos;envoie l&apos;argent par Mobile Money.
+          Minimum {formatFcfa(4500)} (soit une commission nette après les{" "}
+          {formatFcfa(500)} de l&apos;opérateur). L&apos;équipe valide chaque
+          demande manuellement puis t&apos;envoie l&apos;argent par Mobile Money.
         </p>
         <input
           type="number"
@@ -159,8 +162,8 @@ export function AgentGainsClient() {
         {data.earnings.length === 0 ? (
           <p className="rounded-2xl bg-white py-8 text-center text-sm text-zinc-500 shadow-sm">
             Aucune commission pour le moment. Publie des maisons : dès qu&apos;un
-            abonné payant provient de ton annonce, tu gagnes{" "}
-            {formatFcfa(data.commission)}.
+            abonné payant provient de ton annonce, tu gagnes {formatFcfa(5000)}{" "}
+            (moins {formatFcfa(500)} pris par les opérateurs).
           </p>
         ) : (
           data.earnings.map((e) => (

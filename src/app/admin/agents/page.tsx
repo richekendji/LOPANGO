@@ -28,7 +28,8 @@ export default async function AdminAgentsPage({
         <div>
           <h1 className="text-lg font-bold text-zinc-900">Démarcheurs</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Liste blanche, commissions (4 500 / 1ʳᵉ conversion) et retraits.
+            Liste blanche, commissions (5 000 − 500 opérateur = 4 500 nets /
+            1ʳᵉ conversion) et retraits.
           </p>
         </div>
         <Link
