@@ -9,8 +9,8 @@ import {
   type SellerHouse,
 } from "@/lib/mock/houses";
 
-const HOUSES_KEY = "lopango_seller_houses_v2";
-const CONTACTS_KEY = "lopango_contacts_v2";
+const HOUSES_KEY = "lopango_seller_houses_v3";
+const CONTACTS_KEY = "lopango_contacts_v3";
 const PROFILE_KEY = "lopango_profile_v1";
 const SUB_KEY = "lopango_subscription_v1";
 const FORM_DRAFT_NEW_KEY = "lopango_house_form_draft_new";
