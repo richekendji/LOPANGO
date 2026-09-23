@@ -158,6 +158,7 @@ export function HouseForm({
   const [isAgent, setIsAgent] = useState(false);
   const [agentPhone, setAgentPhone] = useState<string | null>(null);
   const [phoneWarning, setPhoneWarning] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const priceNum = Number(form.price.replace(/\s/g, "")) || 0;
 
@@ -384,55 +385,83 @@ export function HouseForm({
   }
 
   async function submit(status: HouseStatus) {
-    const house = buildHouse(status);
-    if (!house) return;
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const house = buildHouse(status);
+      if (!house) return;
 
-    // Démarcheur : interdit de publier avec SON propre numéro
-    if (isAgent && checkOwnPhone(house.phone)) {
-      showError(
-        "C'est TON numéro de démarcheur. Mets le VRAI numéro du propriétaire et non le tien — tu es en train de rompre le contrat de manière malhonnête.",
-      );
-      return;
-    }
-
-    if (status === "active" && !isAgent) {
-      const active = await refreshSubscriptionStatus();
-      if (!active) {
-        saveHouseFormDraft(form, draftId);
-        const retour = pathname || "/dashboard/houses/new";
-        router.push(
-          `/paiement?contexte=publier&retour=${encodeURIComponent(retour)}`,
+      // Démarcheur : interdit de publier avec SON propre numéro
+      if (isAgent && checkOwnPhone(house.phone)) {
+        showError(
+          "C'est TON numéro de démarcheur. Mets le VRAI numéro du propriétaire et non le tien — tu es en train de rompre le contrat de manière malhonnête.",
         );
         return;
       }
-    }
 
-    saveHouse(house);
-    clearHouseFormDraft(draftId);
-    if (!draftId) clearHouseFormDraft(null);
-    // Démarcheur : lie l'annonce à son compte (commission 4 500 à la 1ʳᵉ
-    // conversion payante + accès gratuit à SA propre annonce).
-    if (isAgent) {
-      const link = await registerAgentHouse(house.id);
-      if (!link.ok) {
-        showError(
-          "Annonce enregistrée en local, mais le lien commission a échoué. Réessaie de publier ou contacte LOPANGO.",
-        );
-        // On continue quand même vers la fiche : l'annonce est déjà sauvée.
+      if (status === "active" && !isAgent) {
+        const active = await refreshSubscriptionStatus();
+        if (!active) {
+          saveHouseFormDraft(form, draftId);
+          const retour = pathname || "/dashboard/houses/new";
+          router.push(
+            `/paiement?contexte=publier&retour=${encodeURIComponent(retour)}`,
+          );
+          return;
+        }
       }
+
+      // Sauvegarde locale — un dépassement de quota localStorage
+      // (photos base64 lourdes) ne doit plus bloquer la publication.
+      try {
+        saveHouse(house);
+        clearHouseFormDraft(draftId);
+        if (!draftId) clearHouseFormDraft(null);
+      } catch {
+        showError(
+          "Impossible d'enregistrer l'annonce localement (stockage plein). Supprime des photos lourdes ou libère de l'espace puis réessaie.",
+        );
+        return;
+      }
+
+      // Démarcheur : lie l'annonce à son compte (commission 4 500 à la 1ʳᵉ
+      // conversion payante + accès gratuit à SA propre annonce).
+      // Timeout 10 s : si Supabase ne répond pas, on publie quand même.
+      if (isAgent) {
+        const link = await Promise.race([
+          registerAgentHouse(house.id),
+          new Promise<{ ok: false; error: string }>((resolve) =>
+            setTimeout(
+              () =>
+                resolve({ ok: false, error: "timeout" }),
+              10_000,
+            ),
+          ),
+        ]);
+        if (!link.ok) {
+          showError(
+            "Annonce enregistrée en local, mais le lien commission a échoué. Réessaie de publier ou contacte LOPANGO.",
+          );
+          // On continue quand même vers la fiche : l'annonce est déjà sauvée.
+        }
+      }
+
+      // Lead : une maison vient d'être publiée (conversion côté propriétaire).
+      if (status === "active") {
+        fbqTrack("Lead", {
+          content_name: house.title,
+          content_type: "product",
+          content_ids: [house.id],
+          value: house.price,
+          currency: "XAF",
+          city: house.city,
+        });
+      }
+
+      router.push(`/dashboard/houses/${house.id}`);
+    } finally {
+      setSubmitting(false);
     }
-    // Lead : une maison vient d'être publiée (conversion côté propriétaire).
-    if (status === "active") {
-      fbqTrack("Lead", {
-        content_name: house.title,
-        content_type: "product",
-        content_ids: [house.id],
-        value: house.price,
-        currency: "XAF",
-        city: house.city,
-      });
-    }
-    router.push(`/dashboard/houses/${house.id}`);
   }
 
   const field =
@@ -796,16 +825,18 @@ export function HouseForm({
         <button
           type="button"
           onClick={() => submit("draft")}
-          className="flex-1 rounded-full border border-[#ebebeb] bg-white py-3.5 text-sm font-semibold text-zinc-900"
+          disabled={submitting}
+          className="flex-1 rounded-full border border-[#ebebeb] bg-white py-3.5 text-sm font-semibold text-zinc-900 disabled:opacity-50"
         >
-          Sauvegarder comme brouillon
+          {submitting ? "…" : "Sauvegarder comme brouillon"}
         </button>
         <button
           type="button"
           onClick={() => submit("active")}
-          className="flex-1 rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white"
+          disabled={submitting}
+          className="flex-1 rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white disabled:opacity-60"
         >
-          Publier
+          {submitting ? "Publication en cours…" : "Publier"}
         </button>
       </div>
     </div>
