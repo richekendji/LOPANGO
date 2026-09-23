@@ -20,6 +20,8 @@ const ERRORS: Record<string, string> = {
   "invalid-phone": "Numéro invalide. Format : 06, 05 ou 04 + 123 45 67.",
   config: "Configuration serveur incomplète.",
   "rate-limit": "Trop de tentatives. Réessayez plus tard.",
+  "no-recovery-email":
+    "Aucun email de récupération n'est enregistré pour ce numéro. Connecte-toi avec ton mot de passe, puis ajoute un email dans Profil → Email de récupération.",
 };
 
 export default function ForgotPasswordPage() {

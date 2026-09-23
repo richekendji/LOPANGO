@@ -10,6 +10,7 @@ import {
   phoneToAuthEmail,
 } from "@/lib/phone";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { postLoginPath } from "@/lib/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { findAgentByPhone } from "@/lib/agents";
@@ -23,7 +24,25 @@ function agentFirstLogin(phone: string): never {
 
 const MIN_PASSWORD = 8;
 
-function siteUrl() {
+/**
+ * Origine du site détectée depuis la requête (x-forwarded-host) :
+ * le redirectTo des liens email correspond TOUJOURS à l'origine
+ * réellement visitée (www.lopango.site en prod, localhost en dev),
+ * donc toujours accepté par la liste blanche Supabase.
+ */
+async function siteUrl(): Promise<string> {
+  try {
+    const h = await headers();
+    const host = h.get("x-forwarded-host") ?? h.get("host");
+    if (host) {
+      const proto =
+        h.get("x-forwarded-proto") ??
+        (host.includes("localhost") ? "http" : "https");
+      return `${proto}://${host}`;
+    }
+  } catch {
+    /* hors requête → fallback env */
+  }
   if (process.env.NEXT_PUBLIC_SITE_URL) {
     return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
   }
@@ -243,8 +262,15 @@ export async function requestPasswordReset(formData: FormData) {
     .eq("phone", phone)
     .maybeSingle();
 
+  // Compte sans email de récupération enregistré : le lien ne PEUT pas
+  // partir (l'email auth est synthétique @lopango.local, sans boîte).
+  // Message explicite au lieu du silence trompeur.
+  if (!profile?.email) {
+    redirect("/forgot-password?error=no-recovery-email");
+  }
+
   // Message générique toujours (anti-énumération)
-  if (profile?.email && normalizeEmail(profile.email) === email) {
+  if (normalizeEmail(profile.email) === email) {
     const supabase = await createClient();
     // Attache temporairement l’email de récupération au user auth pour le reset,
     // SANS accepter un email arbitraire non enregistré.
@@ -262,12 +288,60 @@ export async function requestPasswordReset(formData: FormData) {
         });
       }
       await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${siteUrl()}/auth/callback?next=/reset-password`,
+        redirectTo: `${await siteUrl()}/auth/callback?next=/reset-password`,
       });
     }
   }
 
   redirect("/forgot-password?sent=1");
+}
+
+/**
+ * Enregistre l'email de récupération du compte connecté (profils + auth).
+ * C'est lui qui reçoit les liens « mot de passe oublié ».
+ */
+export async function saveRecoveryEmail(formData: FormData) {
+  const email = normalizeEmail(String(formData.get("email") ?? ""));
+
+  if (!isValidEmail(email)) {
+    redirect("/app/profile?error=invalid-email");
+  }
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    redirect("/app/profile?error=config");
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login?error=bad-credentials");
+  }
+
+  const admin = createAdminClient();
+  const { error: profileError } = await admin
+    .from("profiles")
+    .update({ email })
+    .eq("id", user.id);
+  if (profileError) {
+    redirect("/app/profile?error=save-failed");
+  }
+
+  // L'email auth (synthétique @lopango.local) est basculé vers l'email
+  // réel : même logique que requestPasswordReset / signIn.
+  const currentAuthEmail = user.email ?? "";
+  if (currentAuthEmail.endsWith("@lopango.local") || !currentAuthEmail) {
+    const { error: authError } = await admin.auth.admin.updateUserById(
+      user.id,
+      { email, email_confirm: true },
+    );
+    if (authError) {
+      redirect("/app/profile?error=save-failed");
+    }
+  }
+
+  redirect("/app/profile?saved=email");
 }
 
 export async function updatePassword(formData: FormData) {
