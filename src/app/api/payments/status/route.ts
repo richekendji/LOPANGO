@@ -64,15 +64,20 @@ export async function GET(request: Request) {
     const rejected = status === "rejected" || status === "failed";
 
     if (approved) {
+      const period = parsePeriodFromExternalRef(ref);
       await activateSubscriptionForUser({
         userId: user.id,
-        period: parsePeriodFromExternalRef(ref),
+        period,
         transactionId: tx.transaction_id ?? ref,
         paymentMethod: "sebpay",
       });
       // Commission démarcheur (idempotente : unique house_id).
       try {
-        await processAgentCommission({ externalRef: ref, userId: user.id });
+        await processAgentCommission({
+          externalRef: ref,
+          userId: user.id,
+          period,
+        });
       } catch {
         /* ne jamais bloquer la confirmation */
       }

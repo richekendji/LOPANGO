@@ -213,6 +213,24 @@ export function getLockedAddressRows(
   return rows;
 }
 
+/**
+ * Version PAYWALL d'une annonce : téléphone + adresse réelle retirés
+ * AVANT envoi au navigateur. Sans abonnement, les données sensibles ne
+ * quittent jamais le serveur (le blur CSS seul était contournable via
+ * les devtools). À utiliser pour tout rendu public non débloqué.
+ */
+export function maskHouseForPaywall(h: SellerHouse): SellerHouse {
+  return {
+    ...h,
+    phone: "",
+    street: "",
+    avenue: "",
+    reference: "",
+    address: "",
+    ownerName: "",
+  };
+}
+
 /** Titre affiché — généré depuis les critères (plus de saisie manuelle). */
 export function buildHouseTitle(
   h: Pick<

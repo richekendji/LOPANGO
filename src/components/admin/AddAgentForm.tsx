@@ -20,6 +20,7 @@ export function AddAgentForm() {
     const fd = new FormData(e.currentTarget);
     const phone = String(fd.get("phone") ?? "");
     const agency = String(fd.get("agency") ?? "").trim();
+    const email = String(fd.get("email") ?? "").trim();
 
     if (!agency) {
       setBusy(false);
@@ -27,7 +28,7 @@ export function AddAgentForm() {
       return;
     }
 
-    const res = await addAgent(phone, agency);
+    const res = await addAgent(phone, agency, email);
     setBusy(false);
 
     if (!res.ok) {
@@ -65,6 +66,26 @@ export function AddAgentForm() {
           />
           <p className="text-[11px] text-zinc-400">
             Affiché dans ton tableau admin et lié à ce numéro.
+          </p>
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+            Email{" "}
+            <span className="normal-case font-normal text-zinc-400">
+              (optionnel)
+            </span>
+          </span>
+          <input
+            name="email"
+            type="email"
+            className={field}
+            placeholder="Ex. agent@gmail.com"
+            maxLength={120}
+          />
+          <p className="text-[11px] text-zinc-400">
+            Sert à prévenir le démarcheur par email quand il reçoit une
+            commission de paiement.
           </p>
         </label>
       </div>

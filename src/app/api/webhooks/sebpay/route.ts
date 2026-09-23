@@ -50,10 +50,11 @@ export async function POST(request: NextRequest) {
 
   if (approved && match) {
     const userId = match[2];
+    const period = parsePeriodFromExternalRef(ref);
     try {
       await activateSubscriptionForUser({
         userId,
-        period: parsePeriodFromExternalRef(ref),
+        period,
         transactionId: payload.transaction_id ?? ref,
         paymentMethod: "sebpay",
       });
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
     // Commission démarcheur : +4 500 si 1ʳᵉ conversion via son annonce.
     try {
-      await processAgentCommission({ externalRef: ref, userId });
+      await processAgentCommission({ externalRef: ref, userId, period });
     } catch {
       /* ne jamais faire échouer le webhook pour la commission */
     }

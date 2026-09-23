@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminPhone } from "@/lib/admin";
+import { isValidEmail, normalizeEmail } from "@/lib/phone";
 import { normalizePhone } from "@/lib/phone";
 import { rateLimit } from "@/lib/rate-limit";
 import {
@@ -23,6 +24,7 @@ const WITHDRAWAL_MIN = 4500;
 export type AgentAdminRow = {
   id: string;
   phone: string;
+  email: string | null;
   label: string | null;
   active: boolean;
   created_at: string;
@@ -34,7 +36,7 @@ export async function getAdminAgents(): Promise<AgentAdminRow[]> {
   const admin = createAdminClient();
   const { data: agents } = await admin
     .from("agents")
-    .select("id, phone, label, active, created_at")
+    .select("id, phone, email, label, active, created_at")
     .order("created_at", { ascending: false });
 
   const { data: earnings } = await admin
@@ -52,10 +54,24 @@ export async function getAdminAgents(): Promise<AgentAdminRow[]> {
   }));
 }
 
+/** Normalise un email saisi : renvoie null (colonne vide) ou l'email valide. */
+function parseAgentEmail(raw: string | null | undefined): {
+  email: string | null;
+  error?: string;
+} {
+  const trimmed = (raw ?? "").trim();
+  if (!trimmed) return { email: null };
+  if (!isValidEmail(trimmed)) {
+    return { email: null, error: "Adresse email invalide." };
+  }
+  return { email: normalizeEmail(trimmed) };
+}
+
 /** Ajoute un démarcheur à la liste blanche (depuis l'interface admin). */
 export async function addAgent(
   phoneRaw: string,
   label: string,
+  emailRaw?: string,
 ): Promise<ActionResult> {
   const guard = await requireAdmin();
   if (!guard.ok) return guard;
@@ -65,17 +81,20 @@ export async function addAgent(
     return { ok: false, error: "Numéro invalide. Format : 06, 05 ou 04 + 123 45 67." };
   }
 
+  const agency = label.trim();
+  if (!agency) {
+    return { ok: false, error: "Le nom de l'agence est obligatoire." };
+  }
+
+  const { email, error: emailError } = parseAgentEmail(emailRaw);
+  if (emailError) return { ok: false, error: emailError };
+
   const admin = createAdminClient();
   const { data: existing } = await admin
     .from("agents")
     .select("id, active")
     .eq("phone", phone)
     .maybeSingle();
-
-  const agency = label.trim();
-  if (!agency) {
-    return { ok: false, error: "Le nom de l'agence est obligatoire." };
-  }
 
   if (existing) {
     if (existing.active) {
@@ -84,7 +103,7 @@ export async function addAgent(
     // Réactivation d'un agent précédemment désactivé
     const { error } = await admin
       .from("agents")
-      .update({ active: true, label: agency })
+      .update({ active: true, label: agency, email })
       .eq("id", existing.id);
     if (error) return { ok: false, error: "Erreur d'enregistrement." };
     return { ok: true };
@@ -93,10 +112,51 @@ export async function addAgent(
   const { error } = await admin.from("agents").insert({
     phone,
     label: agency,
+    email,
     active: true,
   });
   if (error) {
     console.error("[agents] add error:", error.message);
+    return { ok: false, error: "Erreur d'enregistrement." };
+  }
+  return { ok: true };
+}
+
+/** Modifie un démarcheur existant (label, email, statut). */
+export async function updateAgent(
+  agentId: string,
+  patch: { label?: string; email?: string | null },
+): Promise<ActionResult> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard;
+
+  const update: { label?: string; email?: string | null } = {};
+
+  if (patch.label !== undefined) {
+    const agency = patch.label.trim();
+    if (!agency) {
+      return { ok: false, error: "Le nom de l'agence est obligatoire." };
+    }
+    update.label = agency;
+  }
+
+  if (patch.email !== undefined) {
+    const { email, error } = parseAgentEmail(patch.email);
+    if (error) return { ok: false, error };
+    update.email = email;
+  }
+
+  if (Object.keys(update).length === 0) {
+    return { ok: true };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("agents")
+    .update(update)
+    .eq("id", agentId);
+  if (error) {
+    console.error("[agents] update error:", error.message);
     return { ok: false, error: "Erreur d'enregistrement." };
   }
   return { ok: true };
@@ -398,6 +458,42 @@ export async function canAgentViewHouse(houseId: string): Promise<boolean> {
     .eq("agent_id", agent.id)
     .maybeSingle();
   return Boolean(link);
+}
+
+/**
+ * Accès complet à une annonce publique ?
+ * - abonnement actif (tenant ou owner) → oui
+ * - démarcheur actif AYANT publié cette annonce → oui
+ * - sinon → non (les données sensibles restent masquées)
+ * Source de vérité SERVEUR : le client ne peut pas la falsifier.
+ */
+export async function getHouseAccess(
+  houseId: string,
+): Promise<{ unlocked: boolean; reason: "subscription" | "agent_own" | "none" }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { unlocked: false, reason: "none" };
+
+  // 1. Abonnement actif ?
+  const { data: subs } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .gt("expires_at", new Date().toISOString())
+    .limit(1);
+  if (subs && subs.length > 0) {
+    return { unlocked: true, reason: "subscription" };
+  }
+
+  // 2. Démarcheur actif, propriétaire de l'annonce ?
+  if (await canAgentViewHouse(houseId)) {
+    return { unlocked: true, reason: "agent_own" };
+  }
+
+  return { unlocked: false, reason: "none" };
 }
 
 /**

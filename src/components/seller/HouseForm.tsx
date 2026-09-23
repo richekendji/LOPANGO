@@ -17,6 +17,7 @@ import {
   clearHouseFormDraft,
   getHouseFormDraft,
   getProfile,
+  hasActiveSubscription,
   refreshSubscriptionStatus,
   saveHouse,
   saveHouseFormDraft,
@@ -400,7 +401,10 @@ export function HouseForm({
       }
 
       if (status === "active" && !isAgent) {
-        const active = await refreshSubscriptionStatus();
+        // Cache d'abord (déjà rafraîchi au chargement de la page) :
+        // publication instantanée pour les abonnés, zéro aller-retour réseau.
+        let active = hasActiveSubscription();
+        if (!active) active = await refreshSubscriptionStatus();
         if (!active) {
           saveHouseFormDraft(form, draftId);
           const retour = pathname || "/dashboard/houses/new";
@@ -425,25 +429,21 @@ export function HouseForm({
       }
 
       // Démarcheur : lie l'annonce à son compte (commission 4 500 à la 1ʳᵉ
-      // conversion payante + accès gratuit à SA propre annonce).
-      // Timeout 10 s : si Supabase ne répond pas, on publie quand même.
+      // conversion payante). En ARRIÈRE-PLAN : la navigation n'attend pas
+      // Supabase — publier doit être instantané.
       if (isAgent) {
-        const link = await Promise.race([
-          registerAgentHouse(house.id),
-          new Promise<{ ok: false; error: string }>((resolve) =>
-            setTimeout(
-              () =>
-                resolve({ ok: false, error: "timeout" }),
-              10_000,
-            ),
-          ),
-        ]);
-        if (!link.ok) {
-          showError(
-            "Annonce enregistrée en local, mais le lien commission a échoué. Réessaie de publier ou contacte LOPANGO.",
-          );
-          // On continue quand même vers la fiche : l'annonce est déjà sauvée.
-        }
+        void registerAgentHouse(house.id)
+          .then((link) => {
+            if (!link.ok) {
+              console.warn(
+                "[HouseForm] lien commission échoué:",
+                link.error,
+              );
+            }
+          })
+          .catch(() => {
+            /* best-effort — l'annonce est déjà sauvée */
+          });
       }
 
       // Lead : une maison vient d'être publiée (conversion côté propriétaire).

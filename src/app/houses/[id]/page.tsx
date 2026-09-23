@@ -1,63 +1,32 @@
-"use client";
-
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Icon } from "@/components/Icon";
 import { HouseSpecsGrid } from "@/components/HouseSpecsGrid";
 import { MediaCarousel } from "@/components/MediaCarousel";
-import { formatFcfa, getLockedAddressRows, newId, type SellerHouse } from "@/lib/mock/houses";
-import { fbqTrack } from "@/lib/analytics/fbq";
+import HouseContactActions from "@/components/HouseContactActions";
+import HouseViewTracker from "@/components/HouseViewTracker";
 import {
-  getHouse,
-  getProfile,
-  hasActiveSubscription,
-  refreshSubscriptionStatus,
-  saveContact,
-  saveHouse,
-  subscribeStore,
-} from "@/lib/mock/store";
-import { canAgentViewHouse } from "@/app/actions/agents";
+  formatFcfa,
+  getLockedAddressRows,
+  maskHouseForPaywall,
+  type SellerHouse,
+} from "@/lib/mock/houses";
+import { getHouseAccess } from "@/app/actions/agents";
+import { getMockHouse } from "@/lib/mock/server-houses";
 
-function HousePublicContent() {
-  const { id } = useParams<{ id: string }>();
-  const [house, setHouse] = useState<SellerHouse | null>(null);
-  const [subscribed, setSubscribed] = useState(false);
-  const [agentOwn, setAgentOwn] = useState(false);
-  const unlocked = subscribed || agentOwn;
-  const [composeOpen, setComposeOpen] = useState(false);
-  const [message, setMessage] = useState("");
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    const refresh = () => {
-      setHouse(getHouse(id) ?? null);
-      setSubscribed(hasActiveSubscription());
-    };
-    refresh();
-    void refreshSubscriptionStatus().then(setSubscribed);
-    // Un agent voit gratuitement uniquement SES annonces.
-    void canAgentViewHouse(id).then((ok) => setAgentOwn(ok));
-    return subscribeStore(refresh);
-  }, [id]);
+export default async function HousePublicPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
 
-  // ViewContent : une fiche maison a été consultée.
-  useEffect(() => {
-    if (!house) return;
-    fbqTrack("ViewContent", {
-      content_name: house.title,
-      content_type: "product",
-      content_ids: [house.id],
-      value: house.price,
-      currency: "XAF",
-      city: house.city,
-    });
-    // Une seule fois par fiche ouverte.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  // Décision d'accès 100 % SERVEUR (abonnement DB + agent_houses).
+  const access = await getHouseAccess(id);
+  const full = await getMockHouse(id);
 
-  if (!house || house.status !== "active") {
+  const notFound = !full || full.status !== "active";
+  if (notFound) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f5f5] px-4">
         <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
@@ -75,44 +44,13 @@ function HousePublicContent() {
     );
   }
 
-  function sendMessage(e: React.FormEvent) {
-    e.preventDefault();
-    if (!house || !unlocked) return;
-    const text = message.trim();
-    if (!text) {
-      setError("Écrivez un message.");
-      return;
-    }
-    const profile = getProfile();
-    const name =
-      `${profile.firstName} ${profile.lastName}`.trim() || "Locataire";
-    saveContact({
-      id: newId("c"),
-      name,
-      phone: profile.phone.trim() || "+242 ",
-      message: text,
-      houseId: house.id,
-      createdAt: "À l'instant",
-    });
-    saveHouse({
-      ...house,
-      contacts: (house.contacts ?? 0) + 1,
-      updatedAt: "À l'instant",
-    });
-    setError(null);
-    setMessage("");
-    setComposeOpen(false);
-    setSent(true);
-    // Contact : message envoyé au propriétaire — signal d'intention très fort.
-    fbqTrack("Contact", {
-      content_name: house.title,
-      content_type: "product",
-      content_ids: [house.id],
-    });
-    setTimeout(() => setSent(false), 2500);
-  }
-
-  const zone = [house.neighborhood, house.city].filter(Boolean).join(", ");
+  const house: SellerHouse = full;
+  const unlocked = access.unlocked;
+  // Sans accès : les données sensibles ne QUITTENT JAMAIS le serveur.
+  const visibleHouse = unlocked ? house : maskHouseForPaywall(house);
+  const zone = [visibleHouse.neighborhood, visibleHouse.city]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
@@ -126,61 +64,54 @@ function HousePublicContent() {
 
         <div className="space-y-3">
           <MediaCarousel
-            photos={house.photos}
-            videos={house.videos ?? []}
-            alt={house.title}
+            photos={visibleHouse.photos}
+            videos={visibleHouse.videos ?? []}
+            alt={visibleHouse.title}
             className="mx-auto aspect-[9/16] w-full max-w-sm"
           />
 
-          {/* Infos visibles sans abonnement — composition / prix / critères */}
+          {/* Infos toujours visibles — composition / prix / critères */}
           <div className="rounded-2xl bg-white px-4 py-3.5 shadow-sm">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg font-bold leading-snug text-zinc-900">
-                  {house.title}
+                  {visibleHouse.title}
                 </h1>
-                {zone && (
-                  <p className="mt-0.5 text-xs text-zinc-500">{zone}</p>
-                )}
-                {house.houseType && (
+                {zone && <p className="mt-0.5 text-xs text-zinc-500">{zone}</p>}
+                {visibleHouse.houseType && (
                   <span className="mt-1.5 inline-block rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-semibold text-zinc-600">
-                    {house.houseType}
+                    {visibleHouse.houseType}
                   </span>
                 )}
               </div>
             </div>
 
             <p className="mt-2.5 text-xl font-bold tabular-nums text-zinc-900">
-              {formatFcfa(house.price)}
+              {formatFcfa(visibleHouse.price)}
               <span className="text-xs font-normal text-zinc-500"> /mois</span>
               <span className="ml-1.5 text-xs font-semibold text-emerald-700">
                 · Négociable
               </span>
             </p>
 
-            {house.description && (
+            {visibleHouse.description && (
               <p className="mt-2.5 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">
-                {house.description}
+                {visibleHouse.description}
               </p>
             )}
 
-            <HouseSpecsGrid house={house} />
+            <HouseSpecsGrid house={visibleHouse} />
           </div>
 
-          {/* Adresse + contact — floutés sans abo */}
+          {/* Adresse + contact — données masquées côté serveur sans abo */}
           <div className="relative overflow-hidden rounded-2xl bg-white shadow-sm">
-            <div
-              className={`px-4 py-3.5 ${
-                unlocked ? "" : "pointer-events-none select-none blur-[8px]"
-              }`}
-              aria-hidden={!unlocked}
-            >
+            <div className="px-4 py-3.5">
               <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">
                 Contact & adresse
               </p>
 
               <div className="mt-2.5 space-y-2">
-                {getLockedAddressRows(house).map((row) => (
+                {getLockedAddressRows(visibleHouse).map((row) => (
                   <div
                     key={row.label}
                     className="flex justify-between gap-3 text-[13px]"
@@ -192,11 +123,11 @@ function HousePublicContent() {
                   </div>
                 ))}
 
-                {house.showOwnerName !== false && (
+                {visibleHouse.showOwnerName !== false && (
                   <div className="flex justify-between gap-3 text-[13px]">
                     <span className="text-zinc-400">Propriétaire</span>
                     <span className="font-semibold text-zinc-900">
-                      {house.ownerName || "Propriétaire"}
+                      {visibleHouse.ownerName || "•••••"}
                     </span>
                   </div>
                 )}
@@ -205,79 +136,39 @@ function HousePublicContent() {
                   <span className="text-zinc-400">Numéro</span>
                   {unlocked ? (
                     <a
-                      href={`tel:${house.phone.replace(/\s/g, "")}`}
+                      href={`tel:${visibleHouse.phone.replace(/\s/g, "")}`}
                       className="font-semibold text-zinc-900"
                     >
-                      {house.phone}
+                      {visibleHouse.phone}
                     </a>
                   ) : (
                     <span className="font-semibold text-zinc-900">
-                      {house.phone || "+242 06 ••• •• ••"}
+                      +242 06 ••• •• ••
                     </span>
                   )}
                 </div>
               </div>
 
               {unlocked && (
-                <div className="mt-3 border-t border-[#ebebeb] pt-3">
-                  <button
-                    type="button"
-                    aria-label="Envoyer un message au vendeur"
-                    onClick={() => {
-                      setComposeOpen((o) => !o);
-                      setError(null);
-                    }}
-                    className={`flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold ${
-                      composeOpen
-                        ? "bg-zinc-900 text-white"
-                        : "bg-[#f5f5f5] text-zinc-900"
-                    }`}
-                  >
-                    <Icon name="message" className="h-4 w-4" />
-                    Message au propriétaire
-                  </button>
-                </div>
-              )}
-
-              {unlocked && sent && (
-                <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-center text-xs font-semibold text-emerald-700">
-                  Message envoyé — le vendeur le voit dans Messages.
-                </p>
-              )}
-
-              {unlocked && composeOpen && (
-                <form
-                  onSubmit={sendMessage}
-                  className="mt-3 space-y-2 border-t border-[#ebebeb] pt-3"
-                >
-                  <textarea
-                    className="min-h-24 w-full resize-y rounded-2xl border border-[#ebebeb] bg-[#f5f5f5] px-3 py-2.5 text-sm outline-none focus:border-zinc-400"
-                    placeholder="Bonjour, cette maison est-elle encore disponible ?"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    autoFocus
-                  />
-                  {error && (
-                    <p className="text-xs font-medium text-red-600">{error}</p>
-                  )}
-                  <button
-                    type="submit"
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-zinc-900 py-3 text-sm font-semibold text-white"
-                  >
-                    <Icon name="send" className="h-4 w-4" />
-                    Envoyer
-                  </button>
-                </form>
+                <HouseContactActions houseId={visibleHouse.id} />
               )}
             </div>
 
             {!unlocked && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gradient-to-b from-white/30 via-white/75 to-white/95 px-5 py-6">
-                <p className="max-w-[18rem] text-center text-[14px] font-semibold leading-snug text-zinc-900">
-                  Débloque l&apos;adresse exacte et le numéro du propriétaire
+              <div className="flex flex-col items-center justify-center bg-gradient-to-b from-white/40 via-white/85 to-white px-5 py-6">
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-700">
+                  🔒 Contenu protégé
+                </span>
+                <p className="mt-2 max-w-[18rem] text-center text-[14px] font-semibold leading-snug text-zinc-900">
+                  L&apos;adresse exacte et le numéro du propriétaire sont
+                  réservés aux abonnés
+                </p>
+                <p className="mt-1 max-w-[20rem] text-center text-xs text-zinc-500">
+                  Souscris un abonnement pour débloquer le contact de toutes
+                  les maisons, sans limite.
                 </p>
                 <Link
-                  href={`/paiement?retour=${encodeURIComponent(`/houses/${house.id}`)}&house=${encodeURIComponent(house.id)}`}
+                  href={`/paiement?retour=${encodeURIComponent(`/houses/${visibleHouse.id}`)}&house=${encodeURIComponent(visibleHouse.id)}`}
                   className="mt-4 flex w-full max-w-sm items-center justify-center rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white shadow-md active:opacity-90"
                 >
                   Débloquer le contact
@@ -287,10 +178,7 @@ function HousePublicContent() {
           </div>
         </div>
       </div>
+      {unlocked && <HouseViewTracker house={visibleHouse} />}
     </div>
   );
-}
-
-export default function HousePublicPage() {
-  return <HousePublicContent />;
 }

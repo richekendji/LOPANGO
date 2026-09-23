@@ -169,6 +169,7 @@ export async function recordPaymentIntent(opts: {
 export async function processAgentCommission(opts: {
   externalRef: string;
   userId: string;
+  period?: string;
 }): Promise<void> {
   try {
     const admin = createAdminClient();
@@ -189,7 +190,11 @@ export async function processAgentCommission(opts: {
 
     // L'abonné est-il l'agent lui-même ? → pas de commission
     const [{ data: agent }, { data: subscriberProfile }] = await Promise.all([
-      admin.from("agents").select("phone").eq("id", link.agent_id).maybeSingle(),
+      admin
+        .from("agents")
+        .select("phone, email, label")
+        .eq("id", link.agent_id)
+        .maybeSingle(),
       admin.from("profiles").select("phone").eq("id", opts.userId).maybeSingle(),
     ]);
     const agentPhone = normalizePhone(agent?.phone ?? "");
@@ -205,10 +210,80 @@ export async function processAgentCommission(opts: {
     });
     if (error && !/duplicate|unique/i.test(error.message)) {
       console.error("[agents] commission insert error:", error.message);
+      return;
+    }
+    // Doublon (webhook + polling traitent le même paiement) : pas de 2ᵉ email.
+    if (error) return;
+
+    // Commission nouvellement créée → email au démarcheur s'il a un email.
+    if (agent?.email) {
+      await notifyAgentPayment({
+        to: agent.email,
+        agentLabel: agent.label,
+        period: opts.period,
+        houseId: intent.house_id,
+      });
     }
   } catch (err) {
     console.error(
       "[agents] processAgentCommission error:",
+      err instanceof Error ? err.message : err,
+    );
+  }
+}
+
+/**
+ * Préviens le démarcheur par email qu'il a reçu une commission.
+ * Passe par l'edge function notify-agent-payment (jamais d'API directe
+ * ici : la clé du provider reste côté Supabase). Best-effort : ne casse
+ * jamais le flux de paiement.
+ */
+async function notifyAgentPayment(opts: {
+  to: string;
+  agentLabel: string | null;
+  period?: string;
+  houseId: string;
+}): Promise<void> {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) return;
+
+    const admin = createAdminClient();
+    const { data: house } = await admin
+      .from("houses")
+      .select("title")
+      .eq("id", opts.houseId)
+      .maybeSingle();
+
+    const res = await fetch(
+      `${url.replace(/\/$/, "")}/functions/v1/notify-agent-payment`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: opts.to,
+          agentLabel: opts.agentLabel,
+          period: opts.period,
+          amount: AGENT_COMMISSION,
+          houseTitle: house?.title ?? null,
+        }),
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+    if (!res.ok) {
+      console.error(
+        "[agents] notify email failed:",
+        res.status,
+        await res.text().catch(() => ""),
+      );
+    }
+  } catch (err) {
+    console.error(
+      "[agents] notify email error:",
       err instanceof Error ? err.message : err,
     );
   }

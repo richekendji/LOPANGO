@@ -6,6 +6,7 @@ import {
   deleteAgent,
   processWithdrawal,
   setAgentActive,
+  updateAgent,
   type AgentAdminRow,
   type AdminWithdrawalRow,
 } from "@/app/actions/agents";
@@ -39,6 +40,11 @@ export function AdminAgentsBoard({
   const [noteFor, setNoteFor] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [wdBusy, setWdBusy] = useState(false);
+  const [editFor, setEditFor] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editError, setEditError] = useState<string | null>(null,);
+  const [editBusy, setEditBusy] = useState(false);
 
   async function toggleAgent(id: string, active: boolean) {
     setBusyId(id);
@@ -52,6 +58,29 @@ export function AdminAgentsBoard({
     setBusyId(id);
     await deleteAgent(id);
     setBusyId(null);
+    setTimeout(() => window.location.reload(), 300);
+  }
+
+  function openEdit(a: AgentAdminRow) {
+    setEditFor(a.id);
+    setEditLabel(a.label || "");
+    setEditEmail(a.email || "");
+    setEditError(null);
+  }
+
+  async function saveEdit(id: string) {
+    setEditBusy(true);
+    setEditError(null);
+    const res = await updateAgent(id, {
+      label: editLabel,
+      email: editEmail,
+    });
+    setEditBusy(false);
+    if (!res.ok) {
+      setEditError(res.error ?? "Erreur d'enregistrement.");
+      return;
+    }
+    setEditFor(null);
     setTimeout(() => window.location.reload(), 300);
   }
 
@@ -117,6 +146,9 @@ export function AdminAgentsBoard({
                   <p className="text-sm text-zinc-600">
                     {displayNormalizedPhone(a.phone)}
                   </p>
+                  <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                    {a.email ? `✉️ ${a.email}` : "✉️ Pas d'email"}
+                  </p>
                   <p className="mt-0.5 text-[11px] text-zinc-400">
                     Ajouté le {formatDate(a.created_at)} ·{" "}
                     {a.total_earnings.toLocaleString("fr-FR")} FCFA gagnés
@@ -132,24 +164,76 @@ export function AdminAgentsBoard({
                   {a.active ? "Actif" : "Désactivé"}
                 </span>
               </div>
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  disabled={busyId === a.id}
-                  onClick={() => toggleAgent(a.id, !a.active)}
-                  className="flex-1 rounded-full border border-[#ebebeb] bg-white py-2 text-xs font-semibold text-zinc-900"
-                >
-                  {a.active ? "Désactiver" : "Réactiver"}
-                </button>
-                <button
-                  type="button"
-                  disabled={busyId === a.id}
-                  onClick={() => removeAgent(a.id)}
-                  className="flex-1 rounded-full bg-red-50 py-2 text-xs font-semibold text-red-700"
-                >
-                  Supprimer
-                </button>
-              </div>
+
+              {editFor === a.id ? (
+                <div className="mt-3 space-y-2 border-t border-[#ebebeb] pt-3">
+                  <input
+                    className={field}
+                    value={editLabel}
+                    onChange={(e) => setEditLabel(e.target.value)}
+                    placeholder="Nom de l'agence"
+                    maxLength={80}
+                  />
+                  <input
+                    className={field}
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    placeholder="Email (commission reçue)"
+                    maxLength={120}
+                  />
+                  {editError && (
+                    <p className="text-xs font-semibold text-red-600">
+                      {editError}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={editBusy}
+                      onClick={() => saveEdit(a.id)}
+                      className="flex-1 rounded-full bg-zinc-900 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      {editBusy ? "…" : "Enregistrer"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={editBusy}
+                      onClick={() => setEditFor(null)}
+                      className="flex-1 rounded-full border border-[#ebebeb] bg-white py-2 text-xs font-semibold text-zinc-900"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    disabled={busyId === a.id}
+                    onClick={() => openEdit(a)}
+                    className="flex-1 rounded-full border border-[#ebebeb] bg-white py-2 text-xs font-semibold text-zinc-900"
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyId === a.id}
+                    onClick={() => toggleAgent(a.id, !a.active)}
+                    className="flex-1 rounded-full border border-[#ebebeb] bg-white py-2 text-xs font-semibold text-zinc-900"
+                  >
+                    {a.active ? "Désactiver" : "Réactiver"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyId === a.id}
+                    onClick={() => removeAgent(a.id)}
+                    className="flex-1 rounded-full bg-red-50 py-2 text-xs font-semibold text-red-700"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              )}
             </article>
           ))
         )}
