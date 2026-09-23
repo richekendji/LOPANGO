@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default async function AdminAgentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ added?: string }>;
+  searchParams: Promise<{ added?: string; edit?: string }>;
 }) {
   const params = await searchParams;
   const [agents, withdrawals] = await Promise.all([
@@ -60,6 +60,7 @@ export default async function AdminAgentsPage({
         agents={agents}
         withdrawals={withdrawals}
         addedLabel={params.added ?? null}
+        editId={params.edit ?? null}
       />
     </div>
   );

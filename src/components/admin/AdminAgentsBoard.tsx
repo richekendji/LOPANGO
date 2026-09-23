@@ -31,18 +31,25 @@ export function AdminAgentsBoard({
   agents,
   withdrawals,
   addedLabel,
+  editId,
 }: {
   agents: AgentAdminRow[];
   withdrawals: AdminWithdrawalRow[];
   addedLabel?: string | null;
+  editId?: string | null;
 }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [noteFor, setNoteFor] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [wdBusy, setWdBusy] = useState(false);
-  const [editFor, setEditFor] = useState<string | null>(null);
-  const [editLabel, setEditLabel] = useState("");
-  const [editEmail, setEditEmail] = useState("");
+  const initialAgent = editId
+    ? (agents.find((a) => a.id === editId) ?? null)
+    : null;
+  const [editFor, setEditFor] = useState<string | null>(
+    initialAgent?.id ?? null,
+  );
+  const [editLabel, setEditLabel] = useState(initialAgent?.label ?? "");
+  const [editEmail, setEditEmail] = useState(initialAgent?.email ?? "");
   const [editError, setEditError] = useState<string | null>(null,);
   const [editBusy, setEditBusy] = useState(false);
 
