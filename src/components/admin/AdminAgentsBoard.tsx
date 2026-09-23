@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   deleteAgent,
   processWithdrawal,
@@ -38,6 +39,10 @@ export function AdminAgentsBoard({
   addedLabel?: string | null;
   editId?: string | null;
 }) {
+  const router = useRouter();
+  // Liste locale : les modifications s'affichent immédiatement,
+  // sans rechargement de page (qui rouvrait le formulaire via ?edit=).
+  const [list, setList] = useState(agents);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [noteFor, setNoteFor] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -50,8 +55,9 @@ export function AdminAgentsBoard({
   );
   const [editLabel, setEditLabel] = useState(initialAgent?.label ?? "");
   const [editEmail, setEditEmail] = useState(initialAgent?.email ?? "");
-  const [editError, setEditError] = useState<string | null>(null,);
+  const [editError, setEditError] = useState<string | null>(null);
   const [editBusy, setEditBusy] = useState(false);
+  const [editSaved, setEditSaved] = useState(false);
 
   async function toggleAgent(id: string, active: boolean) {
     setBusyId(id);
@@ -76,19 +82,41 @@ export function AdminAgentsBoard({
   }
 
   async function saveEdit(id: string) {
+    if (editBusy) return;
     setEditBusy(true);
     setEditError(null);
-    const res = await updateAgent(id, {
-      label: editLabel,
-      email: editEmail,
-    });
-    setEditBusy(false);
-    if (!res.ok) {
-      setEditError(res.error ?? "Erreur d'enregistrement.");
-      return;
+    try {
+      const res = await updateAgent(id, {
+        label: editLabel,
+        email: editEmail,
+      });
+      if (!res.ok) {
+        setEditError(res.error ?? "Erreur d'enregistrement.");
+        return;
+      }
+      // Mise à jour locale : le formulaire se replie et la carte affiche
+      // les nouvelles valeurs + confirmation — sans rechargement.
+      setList((prev) =>
+        prev.map((a) =>
+          a.id === id
+            ? {
+                ...a,
+                label: editLabel.trim() || a.label,
+                email: editEmail.trim() || null,
+              }
+            : a,
+        ),
+      );
+      setEditFor(null);
+      setEditSaved(true);
+      setTimeout(() => setEditSaved(false), 2500);
+      // Nettoie ?edit= de l'URL pour ne pas rouvrir le formulaire.
+      router.replace("/admin/agents", { scroll: false });
+    } catch {
+      setEditError("Erreur réseau. Réessaie.");
+    } finally {
+      setEditBusy(false);
     }
-    setEditFor(null);
-    setTimeout(() => window.location.reload(), 300);
   }
 
   async function decide(id: string, approve: boolean) {
@@ -101,7 +129,7 @@ export function AdminAgentsBoard({
   }
 
   const pendingCount = withdrawals.filter((w) => w.status === "pending").length;
-  const totalCommissions = agents.reduce((a, x) => a + x.total_earnings, 0);
+  const totalCommissions = list.reduce((a, x) => a + x.total_earnings, 0);
 
   const field =
     "w-full rounded-2xl border border-[#ebebeb] bg-white px-4 py-3 text-sm outline-none focus:border-zinc-400";
@@ -129,18 +157,23 @@ export function AdminAgentsBoard({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-sm font-bold text-zinc-900">
-            Mes démarcheurs ({agents.length})
+            Mes démarcheurs ({list.length})
           </p>
           <p className="text-xs font-semibold text-zinc-500">
             {totalCommissions.toLocaleString("fr-FR")} FCFA de commissions
           </p>
         </div>
-        {agents.length === 0 ? (
+        {editSaved && (
+          <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+            Modifications enregistrées ✅
+          </p>
+        )}
+        {list.length === 0 ? (
           <p className="rounded-2xl bg-white py-8 text-center text-sm text-zinc-500 shadow-sm">
             Aucun démarcheur. Appuie sur « + » pour en ajouter un.
           </p>
         ) : (
-          agents.map((a) => (
+          list.map((a) => (
             <article
               key={a.id}
               className="rounded-2xl bg-white p-4 shadow-sm"

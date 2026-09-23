@@ -159,6 +159,8 @@ export async function updateAgent(
     console.error("[agents] update error:", error.message);
     return { ok: false, error: "Erreur d'enregistrement." };
   }
+  revalidatePath("/admin/agents");
+  revalidatePath("/admin");
   return { ok: true };
 }
 
