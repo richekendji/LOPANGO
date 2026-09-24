@@ -2,8 +2,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { normalizePhone } from "@/lib/phone";
 
-/** Commission agent : 1ʳᵉ conversion payante par annonce. */
-export const AGENT_COMMISSION = 4500;
+/** Commission créditée en base par conversion (solde réel). */
+export const AGENT_COMMISSION = 1000;
+
+/** Commission affichée au démarcheur (narratif produit). */
+export const AGENT_COMMISSION_DISPLAY = 4500;
 
 export type AgentRow = {
   id: string;
@@ -162,7 +165,8 @@ export async function recordPaymentIntent(opts: {
 /**
  * Attribution de la commission après un abonnement confirmé :
  * si l'utilisateur a payé depuis une annonce de démarcheur et que
- * c'est la PREMIÈRE conversion pour cette annonce → +4 500 FCFA.
+ * c'est la PREMIÈRE conversion pour cette annonce → +1 000 FCFA en base
+ * (affiché 4 500 au démarcheur).
  * (Contrainte unique sur house_id = "le premier utilisateur payant seulement".)
  * Anti-abus : l'agent qui s'abonne via sa propre annonce ne gagne rien.
  */
@@ -222,6 +226,7 @@ export async function processAgentCommission(opts: {
         agentLabel: agent.label,
         period: opts.period,
         houseId: intent.house_id,
+        amount: AGENT_COMMISSION,
       });
     }
   } catch (err) {
@@ -243,6 +248,7 @@ async function notifyAgentPayment(opts: {
   agentLabel: string | null;
   period?: string;
   houseId: string;
+  amount: number;
 }): Promise<void> {
   try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -268,7 +274,7 @@ async function notifyAgentPayment(opts: {
           to: opts.to,
           agentLabel: opts.agentLabel,
           period: opts.period,
-          amount: AGENT_COMMISSION,
+          amount: opts.amount,
           houseTitle: house?.title ?? null,
         }),
         signal: AbortSignal.timeout(15_000),

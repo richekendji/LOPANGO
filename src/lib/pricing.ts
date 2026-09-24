@@ -1,5 +1,5 @@
-export const PRICE_MENSUEL = 4999;
-export const PRICE_ANNUEL = 49990;
+export const PRICE_MENSUEL = 3999;
+export const PRICE_ANNUEL = 39990;
 export const CURRENCY = "XAF";
 export const COUNTRY = "CG";
 export const SUBSCRIPTION_DURATION_DAYS = 14;

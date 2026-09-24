@@ -16,7 +16,7 @@ const STEPS = [
   {
     n: "02",
     title: "Débloquer l’accès",
-    body: "Abonnement Mobile Money — 4 999 FCFA/mois ou 49 990 FCFA/an — pour publier ou voir les contacts.",
+    body: "Abonnement Mobile Money — 3 999 FCFA/mois ou 39 990 FCFA/an — pour publier ou voir les contacts.",
     Visual: VisualScan,
   },
   {

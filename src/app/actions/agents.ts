@@ -7,6 +7,7 @@ import { isValidEmail, normalizeEmail } from "@/lib/phone";
 import { normalizePhone } from "@/lib/phone";
 import { rateLimit } from "@/lib/rate-limit";
 import {
+  AGENT_COMMISSION_DISPLAY,
   availableBalance,
   sumEarnings,
   sumWithdrawals,
@@ -15,7 +16,7 @@ import { revalidatePath } from "next/cache";
 
 export type ActionResult = { ok: boolean; error?: string };
 
-const WITHDRAWAL_MIN = 4500;
+const WITHDRAWAL_MIN = 1000;
 
 /* ------------------------------------------------------------------ */
 /* Gestion admin de la liste blanche des démarcheurs                   */
@@ -269,7 +270,7 @@ export async function getMyAgentEarnings(): Promise<{
       pending: sumWithdrawals(w, "pending"),
       paid: sumWithdrawals(w, "approved"),
       balance: availableBalance(e, w),
-      commission: 4500,
+      commission: AGENT_COMMISSION_DISPLAY,
       earnings: e,
       withdrawals: w,
     },
@@ -501,7 +502,7 @@ export async function getHouseAccess(
 /**
  * Enregistre une annonce comme publiée par l'agent connecté.
  * Appelée après chaque publication réussie : c'est ce lien qui
- * déclenche la commission 4 500 à la 1ʳᵉ conversion payante.
+ * déclenche la commission 4 500 (1 000 en base) à la 1ʳᵉ conversion payante.
  */
 export async function registerAgentHouse(
   houseId: string,

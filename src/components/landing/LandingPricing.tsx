@@ -20,7 +20,7 @@ export function LandingPricing() {
               Mensuel
             </p>
             <p className="mt-3 text-4xl font-black tracking-tight text-zinc-900">
-              4&nbsp;999
+              3&nbsp;999
               <span className="ml-1 text-base font-semibold text-zinc-500">
                 FCFA/mois
               </span>
@@ -44,7 +44,7 @@ export function LandingPricing() {
               Annuel
             </p>
             <p className="mt-3 text-4xl font-black tracking-tight">
-              49&nbsp;990
+              39&nbsp;990
               <span className="ml-1 text-base font-semibold text-zinc-400">
                 FCFA/an
               </span>

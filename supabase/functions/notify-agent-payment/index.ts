@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
   <p>Un abonnement a été payé via l'une de tes annonces :</p>
   <table style="width:100%;border-collapse:collapse;margin:16px 0">
     <tr><td style="padding:8px;background:#f5f5f5">Montant de la commission</td>
-    <td style="padding:8px;background:#f5f5f5;text-align:right"><strong>4 500 FCFA</strong></td></tr>
+    <td style="padding:8px;background:#f5f5f5;text-align:right"><strong>{amount} FCFA</strong></td></tr>
     <tr><td style="padding:8px">Abonnement</td><td style="padding:8px;text-align:right">${period}</td></tr>
     ${house ? `<tr><td style="padding:8px;background:#f5f5f5">Annonce</td><td style="padding:8px;background:#f5f5f5;text-align:right">${house}</td></tr>` : ""}
   </table>

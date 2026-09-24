@@ -122,14 +122,13 @@ export function AgentGainsClient() {
       >
         <p className="text-sm font-bold text-zinc-900">Demander un retrait</p>
         <p className="text-xs text-zinc-500">
-          Minimum {formatFcfa(4500)} (soit une commission nette après les{" "}
-          {formatFcfa(500)} de l&apos;opérateur). L&apos;équipe valide chaque
-          demande manuellement puis t&apos;envoie l&apos;argent par Mobile Money.
+          Minimum {formatFcfa(1000)}. L&apos;équipe valide chaque demande
+          manuellement puis t&apos;envoie l&apos;argent par Mobile Money.
         </p>
         <input
           type="number"
           inputMode="numeric"
-          min={4500}
+          min={1000}
           step={1}
           className={field}
           placeholder={`Montant (max ${data.balance})`}
@@ -143,13 +142,13 @@ export function AgentGainsClient() {
         )}
         <button
           type="submit"
-          disabled={busy || data.balance < 4500}
+          disabled={busy || data.balance < 1000}
           className="w-full rounded-full bg-zinc-900 py-3 text-sm font-semibold text-white disabled:opacity-50"
         >
           {busy
             ? "Envoi…"
-            : data.balance < 4500
-              ? `Solde insuffisant (min. ${formatFcfa(4500)})`
+            : data.balance < 1000
+              ? `Solde insuffisant (min. ${formatFcfa(1000)})`
               : "Demander le retrait"}
         </button>
       </form>

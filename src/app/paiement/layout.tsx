@@ -4,7 +4,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata: Metadata = pageMetadata({
   title: "Abonnement",
   description:
-    "Débloquez LOPANGO par Mobile Money : 4 999 FCFA/mois ou 49 990 FCFA/an. Contacts et publication.",
+    "Débloquez LOPANGO par Mobile Money : 3 999 FCFA/mois ou 39 990 FCFA/an. Contacts et publication.",
   path: "/paiement",
 });
 

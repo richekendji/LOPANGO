@@ -30,7 +30,6 @@ import {
   resolveVideoUrl,
 } from "@/lib/video";
 import { SelectField } from "@/components/SelectField";
-import { normalizePhone } from "@/lib/phone";
 import { registerAgentHouse } from "@/app/actions/agents";
 
 type FormState = {
@@ -157,58 +156,26 @@ export function HouseForm({
   const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [isAgent, setIsAgent] = useState(false);
-  const [agentPhone, setAgentPhone] = useState<string | null>(null);
-  const [phoneWarning, setPhoneWarning] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const priceNum = Number(form.price.replace(/\s/g, "")) || 0;
 
   useEffect(() => {
     setReady(true);
-    // Statut démarcheur : publication sans paywall + message « vrai numéro ».
+    // Statut démarcheur : publication sans paywall.
     fetch("/api/agent/me", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { agent?: boolean; agentPhone?: string } | null) => {
-        setIsAgent(Boolean(d?.agent));
-        setAgentPhone(d?.agentPhone ? normalizePhone(d.agentPhone) : null);
-      })
-      .catch(() => {
-        setIsAgent(false);
-        setAgentPhone(null);
-      });
+      .then((d: { agent?: boolean } | null) => setIsAgent(Boolean(d?.agent)))
+      .catch(() => setIsAgent(false));
   }, []);
-
-  // Re-vérifie le numéro dès que le statut agent est connu
-  useEffect(() => {
-    if (agentPhone) checkOwnPhone(form.phone);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentPhone]);
 
   useEffect(() => {
     if (!ready) return;
     saveHouseFormDraft(form, draftId);
   }, [form, draftId, ready]);
 
-  function checkOwnPhone(phoneRaw: string) {
-    if (!isAgent || !agentPhone) {
-      setPhoneWarning(null);
-      return false;
-    }
-    const entered = normalizePhone(phoneRaw);
-    const isOwn = Boolean(entered && entered === agentPhone);
-    setPhoneWarning(
-      isOwn
-        ? "⚠️ C'est TON numéro de démarcheur. Mets le VRAI numéro du propriétaire et non le tien — tu es en train de rompre le contrat de manière malhonnête."
-        : null,
-    );
-    return isOwn;
-  }
-
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
-    if (key === "phone" && typeof value === "string") {
-      checkOwnPhone(value);
-    }
   }
 
   function showError(message: string) {
@@ -391,14 +358,6 @@ export function HouseForm({
     try {
       const house = buildHouse(status);
       if (!house) return;
-
-      // Démarcheur : interdit de publier avec SON propre numéro
-      if (isAgent && checkOwnPhone(house.phone)) {
-        showError(
-          "C'est TON numéro de démarcheur. Mets le VRAI numéro du propriétaire et non le tien — tu es en train de rompre le contrat de manière malhonnête.",
-        );
-        return;
-      }
 
       if (status === "active" && !isAgent) {
         // Cache d'abord (déjà rafraîchi au chargement de la page) :
@@ -664,7 +623,7 @@ export function HouseForm({
         </label>
         <label className="block space-y-1.5">
           <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            {isAgent ? "Numéro du propriétaire" : "Téléphone"} {req}
+            {isAgent ? "Numéro du gérant" : "Téléphone"} {req}
           </span>
           <input
             className={field}
@@ -673,14 +632,10 @@ export function HouseForm({
             onChange={(e) => update("phone", e.target.value)}
             placeholder="+242 06 …"
           />
-          {isAgent && !phoneWarning && (
+          {isAgent && (
             <span className="block text-xs text-zinc-500">
-              Mets le vrai numéro du propriétaire — pas le tien.
-            </span>
-          )}
-          {phoneWarning && (
-            <span className="block rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
-              {phoneWarning}
+              Ton numéro ou celui du propriétaire — le locataire appelle ce
+              numéro.
             </span>
           )}
         </label>
