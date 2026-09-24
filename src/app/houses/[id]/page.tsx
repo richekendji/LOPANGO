@@ -103,76 +103,84 @@ export default async function HousePublicPage({
             <HouseSpecsGrid house={visibleHouse} />
           </div>
 
-          {/* Adresse + contact — données masquées côté serveur sans abo */}
+          {/* Adresse + contact — floutées derrière le bouton sans abo,
+              aucune donnée réelle n'est envoyée au navigateur */}
           <div className="relative overflow-hidden rounded-2xl bg-white shadow-sm">
-            <div className="px-4 py-3.5">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">
-                Contact & adresse
-              </p>
+            {unlocked ? (
+              <div className="px-4 py-3.5">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+                  Contact & adresse
+                </p>
 
-              <div className="mt-2.5 space-y-2">
-                {getLockedAddressRows(visibleHouse).map((row) => (
-                  <div
-                    key={row.label}
-                    className="flex justify-between gap-3 text-[13px]"
-                  >
-                    <span className="shrink-0 text-zinc-400">{row.label}</span>
-                    <span className="max-w-[65%] text-right font-semibold text-zinc-900">
-                      {row.value}
-                    </span>
-                  </div>
-                ))}
+                <div className="mt-2.5 space-y-2">
+                  {getLockedAddressRows(visibleHouse).map((row) => (
+                    <div
+                      key={row.label}
+                      className="flex justify-between gap-3 text-[13px]"
+                    >
+                      <span className="shrink-0 text-zinc-400">{row.label}</span>
+                      <span className="max-w-[65%] text-right font-semibold text-zinc-900">
+                        {row.value}
+                      </span>
+                    </div>
+                  ))}
 
-                {visibleHouse.showOwnerName !== false && (
-                  <div className="flex justify-between gap-3 text-[13px]">
-                    <span className="text-zinc-400">Propriétaire</span>
-                    <span className="font-semibold text-zinc-900">
-                      {visibleHouse.ownerName || "•••••"}
-                    </span>
-                  </div>
-                )}
+                  {visibleHouse.showOwnerName !== false && (
+                    <div className="flex justify-between gap-3 text-[13px]">
+                      <span className="text-zinc-400">Propriétaire</span>
+                      <span className="font-semibold text-zinc-900">
+                        {visibleHouse.ownerName || "Propriétaire"}
+                      </span>
+                    </div>
+                  )}
 
-                <div className="flex items-center justify-between gap-3 text-[13px]">
-                  <span className="text-zinc-400">Numéro</span>
-                  {unlocked ? (
+                  <div className="flex items-center justify-between gap-3 text-[13px]">
+                    <span className="text-zinc-400">Numéro</span>
                     <a
                       href={`tel:${visibleHouse.phone.replace(/\s/g, "")}`}
                       className="font-semibold text-zinc-900"
                     >
                       {visibleHouse.phone}
                     </a>
-                  ) : (
-                    <span className="font-semibold text-zinc-900">
-                      +242 06 ••• •• ••
-                    </span>
-                  )}
+                  </div>
                 </div>
-              </div>
 
-              {unlocked && (
                 <HouseContactActions houseId={visibleHouse.id} />
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="px-4 py-3.5">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+                  Contact & adresse
+                </p>
 
-            {!unlocked && (
-              <div className="flex flex-col items-center justify-center bg-gradient-to-b from-white/40 via-white/85 to-white px-5 py-6">
-                <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-700">
-                  🔒 Contenu protégé
-                </span>
-                <p className="mt-2 max-w-[18rem] text-center text-[14px] font-semibold leading-snug text-zinc-900">
-                  L&apos;adresse exacte et le numéro du propriétaire sont
-                  réservés aux abonnés
-                </p>
-                <p className="mt-1 max-w-[20rem] text-center text-xs text-zinc-500">
-                  Souscris un abonnement pour débloquer le contact de toutes
-                  les maisons, sans limite.
-                </p>
-                <Link
-                  href={`/paiement?retour=${encodeURIComponent(`/houses/${visibleHouse.id}`)}&house=${encodeURIComponent(visibleHouse.id)}`}
-                  className="mt-4 flex w-full max-w-sm items-center justify-center rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white shadow-md active:opacity-90"
-                >
-                  Débloquer le contact
-                </Link>
+                {/* Silhouettes floutées — pas de données, pas d'étoiles */}
+                <div className="relative mt-2.5" aria-hidden>
+                  <div className="space-y-2.5 blur-[5px] select-none">
+                    {[40, 56, 48, 64, 36].map((w, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between gap-3"
+                      >
+                        <div className="h-3.5 w-16 rounded bg-zinc-200" />
+                        <div
+                          className="h-3.5 rounded bg-zinc-300"
+                          style={{ width: `${w}%` }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-white/30 via-white/85 to-white px-5 py-6 text-center">
+                    <p className="max-w-[18rem] text-[14px] font-semibold leading-snug text-zinc-900">
+                      Adresse exacte et numéro du propriétaire
+                    </p>
+                    <Link
+                      href={`/paiement?retour=${encodeURIComponent(`/houses/${visibleHouse.id}`)}&house=${encodeURIComponent(visibleHouse.id)}`}
+                      className="flex w-full max-w-sm items-center justify-center rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white shadow-md active:opacity-90"
+                    >
+                      Débloquer le contact
+                    </Link>
+                  </div>
+                </div>
               </div>
             )}
           </div>
