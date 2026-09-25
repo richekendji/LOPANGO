@@ -95,8 +95,8 @@ export default async function AgentActivationPage({
         </form>
 
         <p className="text-center text-xs leading-relaxed text-zinc-400">
-          Ton espace démarcheur te permet de publier des maisons gratuitement et
-          de suivre tes gains dans l&apos;onglet Retirer.
+          Ton espace démarcheur te permet de publier des maisons gratuitement
+          et de mettre ton numéro en contact sur tes annonces.
         </p>
       </div>
     </div>

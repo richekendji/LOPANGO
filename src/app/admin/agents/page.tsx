@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  getAdminAgents,
-  getAdminWithdrawals,
-} from "@/app/actions/agents";
+import { getAdminAgents } from "@/app/actions/agents";
 import { AdminAgentsBoard } from "@/components/admin/AdminAgentsBoard";
 
 export const metadata: Metadata = {
@@ -17,10 +14,7 @@ export default async function AdminAgentsPage({
   searchParams: Promise<{ added?: string; edit?: string }>;
 }) {
   const params = await searchParams;
-  const [agents, withdrawals] = await Promise.all([
-    getAdminAgents(),
-    getAdminWithdrawals(),
-  ]);
+  const agents = await getAdminAgents();
 
   return (
     <div className="space-y-5">
@@ -28,8 +22,8 @@ export default async function AdminAgentsPage({
         <div>
           <h1 className="text-lg font-bold text-zinc-900">Démarcheurs</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Liste blanche, commissions (5 000 − 500 opérateur = 4 500 nets /
-            1ʳᵉ conversion) et retraits.
+            Liste blanche — publication gratuite et accès à leurs propres
+            annonces.
           </p>
         </div>
         <Link
@@ -58,7 +52,6 @@ export default async function AdminAgentsPage({
 
       <AdminAgentsBoard
         agents={agents}
-        withdrawals={withdrawals}
         addedLabel={params.added ?? null}
         editId={params.edit ?? null}
       />

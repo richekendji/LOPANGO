@@ -1,28 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { SellerShell } from "@/components/seller/SellerShell";
 
 export function DashboardHomeClient() {
-  const [isAgent, setIsAgent] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/agent/me", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { agent?: boolean } | null) => setIsAgent(Boolean(d?.agent)))
-      .catch(() => setIsAgent(false));
-  }, []);
-
   return (
     <SellerShell title="Espace vendeur" backHref="/app">
       <div className="space-y-4">
         <div className="rounded-[1.5rem] bg-white p-5 shadow-sm">
           <h1 className="text-xl font-bold text-zinc-900">Bonjour 👋</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {isAgent
-              ? "Publie des maisons et suis tes gains."
-              : "Gérez vos annonces et les demandes des locataires."}
+            Gérez vos annonces et les demandes des locataires.
           </p>
         </div>
         <Link
@@ -38,10 +26,10 @@ export function DashboardHomeClient() {
           + Publier une maison
         </Link>
         <Link
-          href={isAgent ? "/app/gains" : "/app/inbox"}
+          href="/app/inbox"
           className="block rounded-[1.5rem] bg-white p-5 font-semibold text-zinc-900 shadow-sm"
         >
-          {isAgent ? "Mes gains / Retirer →" : "Réclamation →"}
+          Réclamation →
         </Link>
       </div>
     </SellerShell>

@@ -11,7 +11,6 @@ import { getSebPay, normalizeCongoPhone } from "@/lib/sebpay";
 import { createClient } from "@/lib/supabase/server";
 import { activateSubscriptionForUser } from "@/lib/subscription";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { processAgentCommission, recordPaymentIntent } from "@/lib/agents";
 
 const operatorSlugs = CONGO_OPERATORS.map((o) => o.slug) as [string, ...string[]];
 
@@ -79,26 +78,12 @@ export async function POST(request: Request) {
     // Dev local : active l’abo sans SebPay (toujours lié à la session).
     if (process.env.NODE_ENV === "development") {
       const externalRef = `dev_${period}_${user.id}_${Date.now()}`;
-      await recordPaymentIntent({
-        externalRef,
-        userId: user.id,
-        houseId: parsed.data.houseId ?? null,
-      });
       await activateSubscriptionForUser({
         userId: user.id,
         period,
         transactionId: externalRef,
         paymentMethod: "dev",
       });
-      // Même logique de commission qu'en prod (1ʳᵉ conversion = 4 500).
-      try {
-        await processAgentCommission({
-          externalRef,
-          userId: user.id,
-        });
-      } catch {
-        /* ne jamais bloquer l'activation */
-      }
       return NextResponse.json({
         ok: true,
         approved: true,
@@ -120,14 +105,6 @@ export async function POST(request: Request) {
     const externalRef = `lopango_${period}_${user.id}_${Date.now()}_${Math.random()
       .toString(36)
       .slice(2, 8)}`;
-
-    // Mémorise l'annonce d'origine du paiement pour l'attribution
-    // de la commission agent au webhook (1ʳᵉ conversion = 4 500 FCFA).
-    await recordPaymentIntent({
-      externalRef,
-      userId: user.id,
-      houseId: parsed.data.houseId ?? null,
-    });
 
     const sebpay = getSebPay();
     const result = await sebpay.create({

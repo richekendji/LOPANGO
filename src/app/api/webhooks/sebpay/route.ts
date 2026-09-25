@@ -4,7 +4,6 @@ import {
   activateSubscriptionForUser,
   parsePeriodFromExternalRef,
 } from "@/lib/subscription";
-import { processAgentCommission } from "@/lib/agents";
 
 const REF_RE =
   /^lopango_(mensuel|annuel)_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})_/i;
@@ -60,12 +59,6 @@ export async function POST(request: NextRequest) {
       });
     } catch {
       /* SebPay peut retenter */
-    }
-    // Commission démarcheur : +4 500 si 1ʳᵉ conversion via son annonce.
-    try {
-      await processAgentCommission({ externalRef: ref, userId, period });
-    } catch {
-      /* ne jamais faire échouer le webhook pour la commission */
     }
   }
 

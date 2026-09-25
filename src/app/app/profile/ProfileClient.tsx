@@ -18,7 +18,6 @@ export function ProfileClient() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<UserProfile | null>(null);
   const [saved, setSaved] = useState(false);
-  const [isAgent, setIsAgent] = useState(false);
 
   useEffect(() => {
     const refresh = () => {
@@ -27,10 +26,6 @@ export function ProfileClient() {
       setForm(p);
     };
     refresh();
-    fetch("/api/agent/me", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { agent?: boolean } | null) => setIsAgent(Boolean(d?.agent)))
-      .catch(() => setIsAgent(false));
     return subscribeStore(refresh);
   }, []);
 
@@ -231,15 +226,12 @@ export function ProfileClient() {
           <span className="text-zinc-400">→</span>
         </Link>
         <Link
-          href={isAgent ? "/app/gains" : "/app/inbox"}
+          href="/app/inbox"
           className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 shadow-sm"
         >
-          <Icon
-            name={isAgent ? "wallet" : "inbox"}
-            className="h-5 w-5 text-zinc-700"
-          />
+          <Icon name="inbox" className="h-5 w-5 text-zinc-700" />
           <span className="flex-1 text-sm font-semibold text-zinc-900">
-            {isAgent ? "Mes gains / Retirer" : "Réclamation"}
+            Réclamation
           </span>
           <span className="text-zinc-400">→</span>
         </Link>

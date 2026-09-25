@@ -19,6 +19,7 @@ function BottomNav() {
     const refresh = () => setSubscribed(hasActiveSubscription());
     refresh();
     void refreshSubscriptionStatus().then(setSubscribed);
+    // Les démarcheurs publient sans paywall → onglet Publier direct.
     fetch("/api/agent/me", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { agent?: boolean } | null) => setIsAgent(Boolean(d?.agent)))
@@ -36,32 +37,26 @@ function BottomNav() {
         icon: "publish" as const,
         publish: true as const,
       },
-      isAgent
-        ? {
-            href: "/app/gains",
-            label: "Retirer",
-            icon: "wallet" as const,
-          }
-        : {
-            href: "/app/inbox",
-            label: "Réclamation",
-            icon: "inbox" as const,
-          },
+      {
+        href: "/app/inbox",
+        label: "Réclamation",
+        icon: "inbox" as const,
+      },
       { href: "/app/profile", label: "Profil", icon: "user" as const },
     ];
-  }, [isAgent]);
+  }, []);
 
   const prefetchHrefs = useMemo(
     () => [
       "/app",
       "/dashboard/houses",
-      isAgent ? "/app/gains" : "/app/inbox",
+      "/app/inbox",
       "/app/profile",
       PUBLISH_FORM,
       "/paiement",
-      isAgent || subscribed ? PUBLISH_FORM : PUBLISH_PAY,
+      subscribed ? PUBLISH_FORM : PUBLISH_PAY,
     ],
-    [subscribed, isAgent],
+    [subscribed],
   );
 
   const { arm, isHot, pathname } = useInstantNav(prefetchHrefs);
@@ -71,10 +66,8 @@ function BottomNav() {
       <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-2">
         {tabs.map((tab) => {
           const href =
-            "publish" in tab && tab.publish && !isAgent
-              ? subscribed
-                ? PUBLISH_FORM
-                : PUBLISH_PAY
+            "publish" in tab && tab.publish && !subscribed && !isAgent
+              ? PUBLISH_PAY
               : tab.href;
           const pathActive =
             tab.href === "/dashboard/houses"

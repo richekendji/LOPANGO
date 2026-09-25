@@ -11,36 +11,39 @@ const PUBLISH_PAY =
 
 export function FeedShell({
   children,
-  isAgent = false,
 }: {
   children: React.ReactNode;
-  isAgent?: boolean;
 }) {
   return (
     <div className="min-h-screen bg-[#f5f5f5] text-zinc-900">
       <div className="mx-auto max-w-lg pb-24 pt-3">{children}</div>
-      <FeedBottomNav isAgent={isAgent} />
+      <FeedBottomNav />
     </div>
   );
 }
 
-function FeedBottomNav({ isAgent }: { isAgent: boolean }) {
+function FeedBottomNav() {
   const [subscribed, setSubscribed] = useState(false);
+  const [isAgent, setIsAgent] = useState(false);
 
   useEffect(() => {
     const refresh = () => setSubscribed(hasActiveSubscription());
     refresh();
     void refreshSubscriptionStatus().then(setSubscribed);
+    // Les démarcheurs publient sans paywall → onglet Publier direct.
+    fetch("/api/agent/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { agent?: boolean } | null) => setIsAgent(Boolean(d?.agent)))
+      .catch(() => setIsAgent(false));
     return subscribeStore(refresh);
   }, []);
 
   const baseTabs = useMemo(() => {
-    // Agent : l'onglet « Réclamation » devient « Retirer » (page Gains).
     // Il peut publier gratuitement → pas de paywall sur « Publier ».
     const tabs: {
       href: string;
       label: string;
-      icon: "home" | "search" | "publish" | "inbox" | "user" | "wallet";
+      icon: "home" | "search" | "publish" | "inbox" | "user";
       publish?: true;
     }[] = [
       { href: "/app", label: "Accueil", icon: "home" },
@@ -51,25 +54,23 @@ function FeedBottomNav({ isAgent }: { isAgent: boolean }) {
         icon: "publish",
         publish: true,
       },
-      isAgent
-        ? { href: "/app/gains", label: "Retirer", icon: "wallet" as const }
-        : { href: "/app/inbox", label: "Réclamation", icon: "inbox" as const },
+      { href: "/app/inbox", label: "Réclamation", icon: "inbox" as const },
       { href: "/app/profile", label: "Profil", icon: "user" },
     ];
     return tabs;
-  }, [isAgent]);
+  }, []);
 
   const prefetchHrefs = useMemo(
     () => [
       "/app",
       "/app/search",
-      isAgent ? "/app/gains" : "/app/inbox",
+      "/app/inbox",
       "/app/profile",
       PUBLISH_FORM,
       "/paiement",
-      isAgent || subscribed ? PUBLISH_FORM : PUBLISH_PAY,
+      subscribed ? PUBLISH_FORM : PUBLISH_PAY,
     ],
-    [subscribed, isAgent],
+    [subscribed],
   );
 
   const { arm, isHot, pathname } = useInstantNav(prefetchHrefs);
@@ -79,10 +80,8 @@ function FeedBottomNav({ isAgent }: { isAgent: boolean }) {
       <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-2">
         {baseTabs.map((tab) => {
           const href =
-            "publish" in tab && tab.publish && !isAgent
-              ? subscribed
-                ? PUBLISH_FORM
-                : PUBLISH_PAY
+            "publish" in tab && tab.publish && !subscribed && !isAgent
+              ? PUBLISH_PAY
               : tab.href;
           const pathActive =
             tab.href === "/app"

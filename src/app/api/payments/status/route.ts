@@ -7,7 +7,6 @@ import {
   parsePeriodFromExternalRef,
 } from "@/lib/subscription";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { processAgentCommission } from "@/lib/agents";
 
 const querySchema = z.object({
   ref: z.string().min(3).max(120),
@@ -71,16 +70,6 @@ export async function GET(request: Request) {
         transactionId: tx.transaction_id ?? ref,
         paymentMethod: "sebpay",
       });
-      // Commission démarcheur (idempotente : unique house_id).
-      try {
-        await processAgentCommission({
-          externalRef: ref,
-          userId: user.id,
-          period,
-        });
-      } catch {
-        /* ne jamais bloquer la confirmation */
-      }
     }
 
     return NextResponse.json({

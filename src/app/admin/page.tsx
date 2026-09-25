@@ -77,9 +77,6 @@ export default async function AdminPage() {
                   <p className="mt-0.5 truncate text-[11px] text-zinc-500">
                     {a.email ? `✉️ ${a.email}` : "✉️ Pas d'email"}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-zinc-400">
-                    {a.total_earnings.toLocaleString("fr-FR")} FCFA gagnés
-                  </p>
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
