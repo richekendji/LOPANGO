@@ -74,8 +74,8 @@ export function LandingHero() {
 
           <p className="mt-3 text-sm leading-relaxed text-zinc-600">
             Avec <span className="font-semibold text-zinc-900">LOPANGO</span> :
-            tu cherches, tu appelles le propriétaire, tu vas voir — sans frais.
-            Votre déménagement est notre mission.
+            tu cherches, tu trouve ce qui te plais, tu vas voir. Votre
+            déménagement est notre mission.
           </p>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
