@@ -265,19 +265,20 @@ export function HouseForm({
   }
 
   function validate(): string | null {
-    const bedrooms = parseCount(form.bedrooms);
-    const kitchens = parseCount(form.kitchens);
-    const livingRooms = parseCount(form.livingRooms);
+    const isStudio = form.houseType === "Studio";
+    const bedrooms = isStudio ? 0 : parseCount(form.bedrooms);
+    const kitchens = isStudio ? 0 : parseCount(form.kitchens);
+    const livingRooms = isStudio ? 0 : parseCount(form.livingRooms);
     const showers = parseCount(form.showers);
     const housesOnPlot = parseCount(form.housesOnPlot);
 
-    if (!Number.isFinite(bedrooms)) {
+    if (!isStudio && !Number.isFinite(bedrooms)) {
       return "Indique le nombre de chambres.";
     }
-    if (!Number.isFinite(kitchens)) {
+    if (!isStudio && !Number.isFinite(kitchens)) {
       return "Indique le nombre de cuisines.";
     }
-    if (!Number.isFinite(livingRooms)) {
+    if (!isStudio && !Number.isFinite(livingRooms)) {
       return "Indique le nombre de salons.";
     }
     if (!Number.isFinite(showers)) {
@@ -317,9 +318,10 @@ export function HouseForm({
       `${profile.firstName} ${profile.lastName}`.trim() ||
       initial?.ownerName ||
       "Propriétaire";
-    const bedrooms = parseCount(form.bedrooms);
-    const kitchens = parseCount(form.kitchens);
-    const livingRooms = parseCount(form.livingRooms);
+    const isStudio = form.houseType === "Studio";
+    const bedrooms = isStudio ? 0 : parseCount(form.bedrooms);
+    const kitchens = isStudio ? 0 : parseCount(form.kitchens);
+    const livingRooms = isStudio ? 0 : parseCount(form.livingRooms);
     const showers = parseCount(form.showers);
     const housesOnPlot = parseCount(form.housesOnPlot);
     const street = form.street.trim();
@@ -545,37 +547,44 @@ export function HouseForm({
           Ces infos apparaissent en premier et aident les locataires à chercher.
         </p>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <CountField
-            label="Chambres"
-            value={form.bedrooms}
-            onChange={(v) => update("bedrooms", v)}
-            fieldClass={field}
-            required
-          />
-          <CountField
-            label="Cuisines"
-            value={form.kitchens}
-            onChange={(v) => update("kitchens", v)}
-            fieldClass={field}
-            required
-          />
-          <CountField
-            label="Salons"
-            value={form.livingRooms}
-            onChange={(v) => update("livingRooms", v)}
-            fieldClass={field}
-            required
-          />
-          <CountField
-            label="Douches"
-            value={form.showers}
-            onChange={(v) => update("showers", v)}
-            fieldClass={field}
-            required
-            disabled={!form.showerInHouse}
-          />
-        </div>
+        {form.houseType === "Studio" ? (
+          <p className="mt-4 rounded-2xl bg-[#f5f5f5] px-4 py-3 text-xs font-medium text-zinc-600">
+            Studio : une seule pièce — chambre, cuisine et salon ensemble. Pas
+            besoin d&apos;indiquer la composition.
+          </p>
+        ) : (
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <CountField
+              label="Chambres"
+              value={form.bedrooms}
+              onChange={(v) => update("bedrooms", v)}
+              fieldClass={field}
+              required
+            />
+            <CountField
+              label="Cuisines"
+              value={form.kitchens}
+              onChange={(v) => update("kitchens", v)}
+              fieldClass={field}
+              required
+            />
+            <CountField
+              label="Salons"
+              value={form.livingRooms}
+              onChange={(v) => update("livingRooms", v)}
+              fieldClass={field}
+              required
+            />
+            <CountField
+              label="Douches"
+              value={form.showers}
+              onChange={(v) => update("showers", v)}
+              fieldClass={field}
+              required
+              disabled={!form.showerInHouse}
+            />
+          </div>
+        )}
 
         <label className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-[#ebebeb] px-4 py-3">
           <span className="text-sm font-medium text-zinc-900">
