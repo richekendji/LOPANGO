@@ -31,6 +31,29 @@ export function isAdminPhone(phone: string | null | undefined): boolean {
   return Boolean(n && adminPhones().has(n));
 }
 
+/** L'utilisateur connecté est-il l'admin (numéro ADMIN_PHONES) ?
+ * Il publie et consulte tout sans abonnement.
+ */
+export async function isAdminUser(): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("phone")
+      .eq("id", user.id)
+      .maybeSingle();
+    return isAdminPhone(profile?.phone);
+  } catch {
+    return false;
+  }
+}
+
 /** Après connexion / inscription : même flux, destination selon le numéro. */
 export function postLoginPath(phone: string | null | undefined): string {
   return isAdminPhone(phone) ? "/admin" : "/app";

@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isAdminPhone } from "@/lib/admin";
+import { isAdminPhone, isAdminUser } from "@/lib/admin";
 import { isValidEmail, normalizeEmail } from "@/lib/phone";
 import { normalizePhone } from "@/lib/phone";
 import { revalidatePath } from "next/cache";
@@ -213,6 +213,7 @@ export async function canAgentViewHouse(houseId: string): Promise<boolean> {
 
 /**
  * Accès complet à une annonce publique ?
+ * - admin (numéro ADMIN_PHONES) → toujours débloqué
  * - abonnement actif (tenant ou owner) → oui
  * - démarcheur actif AYANT publié cette annonce → oui
  * - sinon → non (les données sensibles restent masquées)
@@ -220,12 +221,20 @@ export async function canAgentViewHouse(houseId: string): Promise<boolean> {
  */
 export async function getHouseAccess(
   houseId: string,
-): Promise<{ unlocked: boolean; reason: "subscription" | "agent_own" | "none" }> {
+): Promise<{
+  unlocked: boolean;
+  reason: "subscription" | "agent_own" | "admin" | "none";
+}> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { unlocked: false, reason: "none" };
+
+  // 0. Admin : accès total sans rien payer.
+  if (await isAdminUser()) {
+    return { unlocked: true, reason: "admin" };
+  }
 
   // 1. Abonnement actif ?
   const { data: subs } = await supabase

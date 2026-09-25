@@ -156,17 +156,29 @@ export function HouseForm({
   const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [isAgent, setIsAgent] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const priceNum = Number(form.price.replace(/\s/g, "")) || 0;
 
   useEffect(() => {
     setReady(true);
-    // Statut démarcheur : publication sans paywall.
+    // Statut démarcheur + admin : publication sans paywall.
     fetch("/api/agent/me", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { agent?: boolean } | null) => setIsAgent(Boolean(d?.agent)))
-      .catch(() => setIsAgent(false));
+      .then(
+        (r) =>
+          r.ok
+            ? (r.json() as Promise<{ agent?: boolean; admin?: boolean }>)
+            : null,
+      )
+      .then((d) => {
+        setIsAgent(Boolean(d?.agent));
+        setIsAdmin(Boolean(d?.admin));
+      })
+      .catch(() => {
+        setIsAgent(false);
+        setIsAdmin(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -359,7 +371,7 @@ export function HouseForm({
       const house = buildHouse(status);
       if (!house) return;
 
-      if (status === "active" && !isAgent) {
+      if (status === "active" && !isAgent && !isAdmin) {
         // Cache d'abord (déjà rafraîchi au chargement de la page) :
         // publication instantanée pour les abonnés, zéro aller-retour réseau.
         let active = hasActiveSubscription();

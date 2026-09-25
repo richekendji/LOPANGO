@@ -14,16 +14,28 @@ const PUBLISH_PAY =
 function BottomNav() {
   const [subscribed, setSubscribed] = useState(false);
   const [isAgent, setIsAgent] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const refresh = () => setSubscribed(hasActiveSubscription());
     refresh();
     void refreshSubscriptionStatus().then(setSubscribed);
-    // Les démarcheurs publient sans paywall → onglet Publier direct.
+    // Démarcheurs et admin publient sans paywall → onglet Publier direct.
     fetch("/api/agent/me", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { agent?: boolean } | null) => setIsAgent(Boolean(d?.agent)))
-      .catch(() => setIsAgent(false));
+      .then(
+        (r) =>
+          r.ok
+            ? (r.json() as Promise<{ agent?: boolean; admin?: boolean }>)
+            : null,
+      )
+      .then((d) => {
+        setIsAgent(Boolean(d?.agent));
+        setIsAdmin(Boolean(d?.admin));
+      })
+      .catch(() => {
+        setIsAgent(false);
+        setIsAdmin(false);
+      });
     return subscribeStore(refresh);
   }, []);
 
@@ -66,7 +78,11 @@ function BottomNav() {
       <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-2">
         {tabs.map((tab) => {
           const href =
-            "publish" in tab && tab.publish && !subscribed && !isAgent
+            "publish" in tab &&
+            tab.publish &&
+            !subscribed &&
+            !isAgent &&
+            !isAdmin
               ? PUBLISH_PAY
               : tab.href;
           const pathActive =
