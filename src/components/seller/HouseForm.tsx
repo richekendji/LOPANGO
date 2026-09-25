@@ -15,10 +15,12 @@ import {
 } from "@/lib/mock/houses";
 import {
   clearHouseFormDraft,
+  getHouses,
   getHouseFormDraft,
   getProfile,
   hasActiveSubscription,
   refreshSubscriptionStatus,
+  replaceHouses,
   saveHouse,
   saveHouseFormDraft,
 } from "@/lib/mock/store";
@@ -94,13 +96,18 @@ function fromHouse(h: SellerHouse): FormState {
     showerInHouse: h.showerInHouse ?? true,
     showers: String(h.showers ?? ""),
     housesOnPlot: String(h.housesOnPlot ?? 1),
-    photos: h.photos,
+    photos: stripDataPhotos(h.photos),
     videos: h.videos ?? [],
   };
 }
 
 function isValidDraft(d: Partial<FormState> | null): d is FormState {
   return !!d && typeof d === "object" && Array.isArray(d.photos);
+}
+
+/** Supprime les anciennes photos base64 (elles saturaient le stockage). */
+function stripDataPhotos(photos: string[] | undefined | null): string[] {
+  return (photos ?? []).filter((p) => !p.startsWith("data:"));
 }
 
 function loadInitialForm(
@@ -120,7 +127,7 @@ function loadInitialForm(
       street: draft.street ?? "",
       avenue: draft.avenue ?? "",
       reference: draft.reference ?? "",
-      photos: draft.photos ?? [],
+      photos: stripDataPhotos(draft.photos),
       videos: draft.videos ?? [],
       showerInHouse: draft.showerInHouse ?? true,
       housesOnPlot: draft.housesOnPlot ?? "1",
@@ -436,9 +443,15 @@ export function HouseForm({
         }
       }
 
-      // Sauvegarde locale — un dépassement de quota localStorage
-      // (photos base64 lourdes) ne doit plus bloquer la publication.
+      // Sauvegarde locale — purge d'abord les anciennes photos base64
+      // (elles saturaient le stockage), puis enregistrement.
       try {
+        replaceHouses(
+          getHouses().map((h) => ({
+            ...h,
+            photos: stripDataPhotos(h.photos),
+          })),
+        );
         saveHouse(house);
         clearHouseFormDraft(draftId);
         if (!draftId) clearHouseFormDraft(null);

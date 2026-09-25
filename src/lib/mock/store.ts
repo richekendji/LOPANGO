@@ -81,6 +81,11 @@ export function saveHouse(house: SellerHouse) {
   writeJson(HOUSES_KEY, next);
 }
 
+/** Remplace toute la liste d'annonces (migration de masse). */
+export function replaceHouses(list: SellerHouse[]) {
+  writeJson(HOUSES_KEY, list);
+}
+
 export function deleteHouse(id: string) {
   writeJson(
     HOUSES_KEY,
