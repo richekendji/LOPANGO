@@ -42,7 +42,7 @@ export function LandingHero() {
         {/* Hors du bloc blanc — sur la photo */}
         <div className="hero-anim max-w-lg">
           <p className="text-xl font-bold leading-snug tracking-tight text-white drop-shadow-sm sm:text-2xl">
-            La vie devient facile sans les démarcheurs.
+            La vie devient facile avec lopango.
           </p>
           <p className="mt-2 text-sm leading-relaxed text-white/90 sm:text-[15px]">
             Cette semaine, plus de{" "}
@@ -61,7 +61,7 @@ export function LandingHero() {
         {/* Bloc texte — pas d’anim GSAP pour que les CTA restent cliquables tout de suite */}
         <div className="max-w-lg rounded-2xl bg-white/95 p-5 shadow-xl backdrop-blur-sm sm:p-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#e11d48]">
-            Sans démarcheurs
+            Avec lopango
           </p>
 
           <p className="mt-2 text-xl font-bold leading-snug tracking-tight text-zinc-900 sm:text-2xl">
