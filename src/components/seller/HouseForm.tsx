@@ -22,7 +22,7 @@ import {
   saveHouse,
   saveHouseFormDraft,
 } from "@/lib/mock/store";
-import { fileToPersistentUrl } from "@/lib/images";
+import { compressImageToBlob } from "@/lib/images";
 import { fbqTrack } from "@/lib/analytics/fbq";
 import {
   compressAndStoreVideo,
@@ -198,17 +198,65 @@ export function HouseForm({
     });
   }
 
+  async function uploadPhoto(file: File): Promise<string> {
+    const presignRes = await fetch("/api/photos/presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contentType: file.type || "image/jpeg",
+        fileName: file.name,
+        size: file.size,
+      }),
+    });
+    const data = (await presignRes.json()) as {
+      ok?: boolean;
+      error?: string;
+      uploadUrl?: string;
+      publicUrl?: string;
+    };
+    if (!presignRes.ok || !data.ok || !data.uploadUrl || !data.publicUrl) {
+      throw new Error(data.error || "Import photo impossible.");
+    }
+
+    const put = await fetch(data.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type || "image/jpeg" },
+      body: file,
+    });
+    if (!put.ok) {
+      throw new Error("L'envoi de la photo a échoué. Réessayez.");
+    }
+    return data.publicUrl;
+  }
+
   async function onPhotosSelected(files: FileList | null) {
     if (!files?.length) return;
     setPhotosLoading(true);
     setError(null);
     try {
-      const urls = await Promise.all(
-        Array.from(files).map((f) => fileToPersistentUrl(f)),
+      const urls: string[] = [];
+      for (const original of Array.from(files)) {
+        if (!original.type.startsWith("image/")) {
+          showError("Seules les images sont acceptées.");
+          continue;
+        }
+        // Compression avant envoi (plus léger) ; sinon fichier original.
+        const compressed = await compressImageToBlob(original);
+        const file =
+          compressed != null
+            ? new File([compressed], original.name, { type: "image/jpeg" })
+            : original;
+        urls.push(await uploadPhoto(file));
+      }
+      if (urls.length) {
+        setForm((f) => ({ ...f, photos: [...f.photos, ...urls] }));
+      }
+    } catch (err) {
+      showError(
+        err instanceof Error
+          ? err.message
+          : "Impossible d'importer une photo. Réessayez.",
       );
-      setForm((f) => ({ ...f, photos: [...f.photos, ...urls] }));
-    } catch {
-      showError("Impossible de lire une des photos. Réessayez.");
     } finally {
       setPhotosLoading(false);
     }
