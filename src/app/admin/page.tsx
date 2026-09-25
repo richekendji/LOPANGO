@@ -88,12 +88,20 @@ export default async function AdminPage() {
                   {a.active ? "Actif" : "Désactivé"}
                 </span>
               </div>
-              <Link
-                href={`/admin/agents?edit=${a.id}`}
-                className="mt-3 flex w-full items-center justify-center rounded-full border border-[#ebebeb] bg-white py-2 text-xs font-semibold text-zinc-900"
-              >
-                Modifier (nom, email)
-              </Link>
+              <div className="mt-3 flex gap-2">
+                <Link
+                  href={`/admin/agents?edit=${a.id}`}
+                  className="flex-1 rounded-full border border-[#ebebeb] bg-white py-2 text-center text-xs font-semibold text-zinc-900"
+                >
+                  Modifier (nom, email)
+                </Link>
+                <Link
+                  href={`/admin/agents?houses=${a.id}`}
+                  className="flex-1 rounded-full bg-zinc-900 py-2 text-center text-xs font-semibold text-white"
+                >
+                  Ses maisons
+                </Link>
+              </div>
             </article>
           ))
         )}

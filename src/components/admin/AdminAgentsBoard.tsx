@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   deleteAgent,
+  getAgentHouses,
   setAgentActive,
   updateAgent,
   type AgentAdminRow,
+  type AgentHouseRow,
 } from "@/app/actions/agents";
 import { displayNormalizedPhone } from "@/lib/phone";
 
@@ -24,10 +26,12 @@ export function AdminAgentsBoard({
   agents,
   addedLabel,
   editId,
+  housesId,
 }: {
   agents: AgentAdminRow[];
   addedLabel?: string | null;
   editId?: string | null;
+  housesId?: string | null;
 }) {
   const router = useRouter();
   // Liste locale : les modifications s'affichent immédiatement,
@@ -45,6 +49,56 @@ export function AdminAgentsBoard({
   const [editError, setEditError] = useState<string | null>(null);
   const [editBusy, setEditBusy] = useState(false);
   const [editSaved, setEditSaved] = useState(false);
+
+  // Maisons publiées par un démarcheur (liste déroulante à la demande)
+  const [housesFor, setHousesFor] = useState<string | null>(housesId ?? null);
+  const [houses, setHouses] = useState<AgentHouseRow[]>([]);
+  const [housesLoading, setHousesLoading] = useState(false);
+  const [housesError, setHousesError] = useState<string | null>(null);
+
+  async function loadHouses(id: string) {
+    setHousesFor(id);
+    setHouses([]);
+    setHousesError(null);
+    setHousesLoading(true);
+    try {
+      const rows = await getAgentHouses(id);
+      setHouses(rows);
+    } catch {
+      setHousesError("Erreur de chargement. Réessaie.");
+    } finally {
+      setHousesLoading(false);
+    }
+  }
+
+  function toggleHouses(id: string) {
+    if (housesFor === id) {
+      setHousesFor(null);
+      setHouses([]);
+      setHousesError(null);
+      return;
+    }
+    void loadHouses(id);
+  }
+
+  // Ouverture directe via /admin/agents?houses=<id>
+  useEffect(() => {
+    if (!housesId) return;
+    let cancelled = false;
+    void getAgentHouses(housesId)
+      .then((rows) => {
+        if (!cancelled) setHouses(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setHousesError("Erreur de chargement. Réessaie.");
+      })
+      .finally(() => {
+        if (!cancelled) setHousesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [housesId]);
 
   async function toggleAgent(id: string, active: boolean) {
     setBusyId(id);
@@ -230,6 +284,14 @@ export function AdminAgentsBoard({
                   <button
                     type="button"
                     disabled={busyId === a.id}
+                    onClick={() => toggleHouses(a.id)}
+                    className="flex-1 rounded-full border border-[#ebebeb] bg-white py-2 text-xs font-semibold text-zinc-900"
+                  >
+                    {housesFor === a.id ? "Fermer" : "Ses maisons"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyId === a.id}
                     onClick={() => toggleAgent(a.id, !a.active)}
                     className="flex-1 rounded-full border border-[#ebebeb] bg-white py-2 text-xs font-semibold text-zinc-900"
                   >
@@ -243,6 +305,61 @@ export function AdminAgentsBoard({
                   >
                     Supprimer
                   </button>
+                </div>
+              )}
+
+              {housesFor === a.id && (
+                <div className="mt-3 space-y-2 border-t border-[#ebebeb] pt-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+                    Maisons publiées
+                  </p>
+                  {housesLoading && (
+                    <p className="text-xs text-zinc-500">Chargement…</p>
+                  )}
+                  {housesError && (
+                    <p className="text-xs font-semibold text-red-600">
+                      {housesError}
+                    </p>
+                  )}
+                  {!housesLoading &&
+                  !housesError &&
+                  houses.length === 0 ? (
+                    <p className="text-xs text-zinc-500">
+                      Aucune maison publiée pour le moment.
+                    </p>
+                  ) : (
+                    houses.map((h) => (
+                      <div
+                        key={h.house_id}
+                        className="rounded-2xl bg-[#f5f5f5] px-3 py-2.5"
+                      >
+                        <p className="truncate text-[13px] font-semibold text-zinc-900">
+                          {h.title || `Annonce #${h.house_id.slice(0, 8)}`}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-zinc-500">
+                          {[
+                            h.neighborhood,
+                            h.city,
+                            h.price
+                              ? `${h.price.toLocaleString("fr-FR")} FCFA/mois`
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                        <p className="mt-0.5 flex flex-wrap gap-x-2 text-[11px] text-zinc-400">
+                          {h.contact_phone && (
+                            <span>
+                              ☎ {displayNormalizedPhone(h.contact_phone)}
+                            </span>
+                          )}
+                          {h.published_at && (
+                            <span>Publié le {formatDate(h.published_at)}</span>
+                          )}
+                        </p>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </article>

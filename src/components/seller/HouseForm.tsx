@@ -387,15 +387,21 @@ export function HouseForm({
         return;
       }
 
-      // Démarcheur : lie l'annonce à son compte (commission 4 500 à la 1ʳᵉ
-      // conversion payante). En ARRIÈRE-PLAN : la navigation n'attend pas
+      // Démarcheur : lie l'annonce à son compte avec un snapshot des infos
+      // (visible côté admin). En ARRIÈRE-PLAN : la navigation n'attend pas
       // Supabase — publier doit être instantané.
       if (isAgent) {
-        void registerAgentHouse(house.id)
+        void registerAgentHouse(house.id, {
+          title: house.title,
+          price: house.price,
+          city: house.city,
+          neighborhood: house.neighborhood,
+          contactPhone: house.phone,
+        })
           .then((link) => {
             if (!link.ok) {
               console.warn(
-                "[HouseForm] lien commission échoué:",
+                "[HouseForm] lien démarcheur échoué:",
                 link.error,
               );
             }

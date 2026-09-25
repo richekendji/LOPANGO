@@ -248,12 +248,19 @@ export async function getHouseAccess(
 }
 
 /**
- * Enregistre une annonce comme publiée par l'agent connecté.
- * Appelée après chaque publication réussie : c'est ce lien qui
- * déclenche la commission 4 500 (1 000 en base) à la 1ʳᵉ conversion payante.
+ * Enregistre une annonce comme publiée par l'agent connecté,
+ * avec un snapshot des infos principales (visible côté admin).
+ * Appelée après chaque publication réussie.
  */
 export async function registerAgentHouse(
   houseId: string,
+  snapshot?: {
+    title?: string;
+    price?: number;
+    city?: string;
+    neighborhood?: string;
+    contactPhone?: string;
+  },
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -278,14 +285,57 @@ export async function registerAgentHouse(
     .maybeSingle();
   if (!agent) return { ok: false, error: "non-agent" };
 
-  const { error } = await admin
-    .from("agent_houses")
-    .upsert({ house_id: houseId, agent_id: agent.id });
+  const row: Record<string, unknown> = {
+    house_id: houseId,
+    agent_id: agent.id,
+    published_at: new Date().toISOString(),
+  };
+  if (snapshot?.title?.trim()) row.title = snapshot.title.trim();
+  if (typeof snapshot?.price === "number" && snapshot.price > 0) {
+    row.price = Math.round(snapshot.price);
+  }
+  if (snapshot?.city?.trim()) row.city = snapshot.city.trim();
+  if (snapshot?.neighborhood?.trim()) {
+    row.neighborhood = snapshot.neighborhood.trim();
+  }
+  if (snapshot?.contactPhone?.trim()) {
+    row.contact_phone = snapshot.contactPhone.trim();
+  }
+
+  const { error } = await admin.from("agent_houses").upsert(row);
   if (error) {
     console.error("[agents] register house error:", error.message);
     return { ok: false, error: "Erreur d'enregistrement." };
   }
   return { ok: true };
+}
+
+export type AgentHouseRow = {
+  house_id: string;
+  title: string | null;
+  price: number | null;
+  city: string | null;
+  neighborhood: string | null;
+  contact_phone: string | null;
+  published_at: string | null;
+};
+
+/** Maisons publiées par un démarcheur (vue admin). */
+export async function getAgentHouses(
+  agentId: string,
+): Promise<AgentHouseRow[]> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return [];
+
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("agent_houses")
+    .select(
+      "house_id, title, price, city, neighborhood, contact_phone, published_at",
+    )
+    .eq("agent_id", agentId)
+    .order("published_at", { ascending: false });
+  return data ?? [];
 }
 
 /* ------------------------------------------------------------------ */
