@@ -310,34 +310,6 @@ export async function registerAgentHouse(
   return { ok: true };
 }
 
-export type AgentHouseRow = {
-  house_id: string;
-  title: string | null;
-  price: number | null;
-  city: string | null;
-  neighborhood: string | null;
-  contact_phone: string | null;
-  published_at: string | null;
-};
-
-/** Maisons publiées par un démarcheur (vue admin). */
-export async function getAgentHouses(
-  agentId: string,
-): Promise<AgentHouseRow[]> {
-  const guard = await requireAdmin();
-  if (!guard.ok) return [];
-
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("agent_houses")
-    .select(
-      "house_id, title, price, city, neighborhood, contact_phone, published_at",
-    )
-    .eq("agent_id", agentId)
-    .order("published_at", { ascending: false });
-  return data ?? [];
-}
-
 /* ------------------------------------------------------------------ */
 /* Garde-fou admin                                                     */
 /* ------------------------------------------------------------------ */
