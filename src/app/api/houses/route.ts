@@ -3,9 +3,6 @@ import { z } from "zod";
 import { insertHouse, listActiveHouses } from "@/lib/houses-db";
 import { createClient } from "@/lib/supabase/server";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { isAdminUser } from "@/lib/admin";
-import { getSessionSubscriptionActive } from "@/lib/subscription";
-import { getCurrentAgent } from "@/lib/agents";
 import { houseMatchesQuery } from "@/lib/search";
 import {
   maskHouseForPaywall,
@@ -82,7 +79,7 @@ export async function GET(req: Request) {
 }
 
 /** Publie une maison : insérée en base, visible par tous.
- * Droit de publier vérifié SERVEUR (admin, abonnement actif ou démarcheur).
+ * Gratuit pour tout utilisateur connecté.
  */
 export async function POST(req: Request) {
   try {
@@ -104,18 +101,6 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
-    }
-
-    const [admin, active, agent] = await Promise.all([
-      isAdminUser(),
-      getSessionSubscriptionActive(),
-      getCurrentAgent(),
-    ]);
-    if (!admin && !active && !agent) {
-      return NextResponse.json(
-        { error: "Abonnement requis pour publier." },
-        { status: 403 },
-      );
     }
 
     const body = await req.json();

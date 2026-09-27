@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   CITIES,
@@ -18,8 +18,6 @@ import {
   getHouses,
   getHouseFormDraft,
   getProfile,
-  hasActiveSubscription,
-  refreshSubscriptionStatus,
   replaceHouses,
   saveHouse,
   saveHouseFormDraft,
@@ -149,7 +147,6 @@ export function HouseForm({
   houseId?: string;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
@@ -163,28 +160,23 @@ export function HouseForm({
   const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [isAgent, setIsAgent] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const priceNum = Number(form.price.replace(/\s/g, "")) || 0;
 
   useEffect(() => {
     setReady(true);
-    // Statut démarcheur + admin : publication sans paywall.
+    // Statut démarcheur : on lie l'annonce à son compte à la publication.
     fetch("/api/agent/me", { cache: "no-store" })
       .then(
         (r) =>
-          r.ok
-            ? (r.json() as Promise<{ agent?: boolean; admin?: boolean }>)
-            : null,
+          r.ok ? (r.json() as Promise<{ agent?: boolean }>) : null,
       )
       .then((d) => {
         setIsAgent(Boolean(d?.agent));
-        setIsAdmin(Boolean(d?.admin));
       })
       .catch(() => {
         setIsAgent(false);
-        setIsAdmin(false);
       });
   }, []);
 
@@ -427,21 +419,6 @@ export function HouseForm({
     try {
       const house = buildHouse(status);
       if (!house) return;
-
-      if (status === "active" && !isAgent && !isAdmin) {
-        // Cache d'abord (déjà rafraîchi au chargement de la page) :
-        // publication instantanée pour les abonnés, zéro aller-retour réseau.
-        let active = hasActiveSubscription();
-        if (!active) active = await refreshSubscriptionStatus();
-        if (!active) {
-          saveHouseFormDraft(form, draftId);
-          const retour = pathname || "/dashboard/houses/new";
-          router.push(
-            `/paiement?contexte=publier&retour=${encodeURIComponent(retour)}`,
-          );
-          return;
-        }
-      }
 
       // Sauvegarde en BASE DE DONNÉES — l'annonce devient visible par tous.
       const isEdit = Boolean(draftId || initial?.id);

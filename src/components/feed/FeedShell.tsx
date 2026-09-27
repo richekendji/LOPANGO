@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Icon } from "@/components/Icon";
 import { InstantTabLink, useInstantNav } from "@/components/InstantNav";
-import { hasActiveSubscription, refreshSubscriptionStatus, subscribeStore } from "@/lib/mock/store";
 
 const PUBLISH_FORM = "/dashboard/houses/new";
-const PUBLISH_PAY =
-  "/paiement?contexte=publier&retour=" + encodeURIComponent(PUBLISH_FORM);
 
 export function FeedShell({
   children,
@@ -23,35 +20,7 @@ export function FeedShell({
 }
 
 function FeedBottomNav() {
-  const [subscribed, setSubscribed] = useState(false);
-  const [isAgent, setIsAgent] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    const refresh = () => setSubscribed(hasActiveSubscription());
-    refresh();
-    void refreshSubscriptionStatus().then(setSubscribed);
-    // Démarcheurs et admin publient sans paywall → onglet Publier direct.
-    fetch("/api/agent/me", { cache: "no-store" })
-      .then(
-        (r) =>
-          r.ok
-            ? (r.json() as Promise<{ agent?: boolean; admin?: boolean }>)
-            : null,
-      )
-      .then((d) => {
-        setIsAgent(Boolean(d?.agent));
-        setIsAdmin(Boolean(d?.admin));
-      })
-      .catch(() => {
-        setIsAgent(false);
-        setIsAdmin(false);
-      });
-    return subscribeStore(refresh);
-  }, []);
-
   const baseTabs = useMemo(() => {
-    // Il peut publier gratuitement → pas de paywall sur « Publier ».
     const tabs: {
       href: string;
       label: string;
@@ -79,10 +48,8 @@ function FeedBottomNav() {
       "/app/inbox",
       "/app/profile",
       PUBLISH_FORM,
-      "/paiement",
-      subscribed ? PUBLISH_FORM : PUBLISH_PAY,
     ],
-    [subscribed],
+    [],
   );
 
   const { arm, isHot, pathname } = useInstantNav(prefetchHrefs);
@@ -91,27 +58,18 @@ function FeedBottomNav() {
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#ebebeb] bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-2">
         {baseTabs.map((tab) => {
-          const href =
-            "publish" in tab &&
-            tab.publish &&
-            !subscribed &&
-            !isAgent &&
-            !isAdmin
-              ? PUBLISH_PAY
-              : tab.href;
           const pathActive =
             tab.href === "/app"
               ? pathname === "/app"
               : "publish" in tab && tab.publish
                 ? pathname.includes("/houses/new") ||
-                  pathname.includes("/edit") ||
-                  pathname.startsWith("/paiement")
+                  pathname.includes("/edit")
                 : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           const active = isHot(tab.label, pathActive);
           return (
             <InstantTabLink
               key={tab.label}
-              href={href}
+              href={tab.href}
               tabKey={tab.label}
               active={active}
               onArm={arm}
