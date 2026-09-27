@@ -38,6 +38,24 @@ const r2UploadBase = (
   "https://e82a01a32e33243e5bd1f7c21e36144c.r2.cloudflarestorage.com"
 ).replace(/\/$/, "");
 
+function r2Hostname(value: string | undefined, fallback: string): string {
+  try {
+    return new URL(value ?? "").host || fallback;
+  } catch {
+    return fallback;
+  }
+}
+// L'URL pré-signée est en style virtual-hosted : <bucket>.<hôte R2>, soit
+// DEUX niveaux de sous-domaine (ex. lopango.e82a…​.r2.cloudflarestorage.com).
+// Le joker CSP `*.r2.cloudflarestorage.com` ne couvre qu'UN seul niveau, donc
+// il faut aussi autoriser explicitement l'hôte <bucket>.<hôte>.
+const r2BucketHost = `${
+  process.env.R2_BUCKET_NAME ?? "lopango"
+}.${r2Hostname(
+  process.env.R2_ENDPOINT,
+  "e82a01a32e33243e5bd1f7c21e36144c.r2.cloudflarestorage.com",
+)}`;
+
 const cspHeader = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://connect.facebook.net`,
@@ -45,7 +63,7 @@ const cspHeader = [
   `img-src 'self' blob: data: ${r2PublicUrl} https://*.r2.dev https://drkctskvuppakycmqags.supabase.co https://images.unsplash.com https://www.facebook.com`,
   `media-src 'self' blob: ${r2PublicUrl} https://*.r2.dev`,
   "font-src 'self' data:",
-  `connect-src 'self' ${r2PublicUrl} https://*.r2.dev ${r2UploadBase} https://*.r2.cloudflarestorage.com https://drkctskvuppakycmqags.supabase.co https://www.facebook.com https://connect.facebook.net https://newapi.sebpay.bj`,
+  `connect-src 'self' ${r2PublicUrl} https://*.r2.dev ${r2UploadBase} https://*.r2.cloudflarestorage.com https://${r2BucketHost} https://drkctskvuppakycmqags.supabase.co https://www.facebook.com https://connect.facebook.net https://newapi.sebpay.bj`,
   "frame-src 'self' https://www.facebook.com",
   "object-src 'none'",
   "base-uri 'self'",
