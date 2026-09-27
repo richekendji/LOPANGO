@@ -209,32 +209,21 @@ export function HouseForm({
   }
 
   async function uploadPhoto(file: File): Promise<string> {
-    const presignRes = await fetch("/api/photos/presign", {
+    const form = new FormData();
+    form.set("file", file);
+    form.set("fileName", file.name);
+
+    const res = await fetch("/api/photos/upload", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contentType: file.type || "image/jpeg",
-        fileName: file.name,
-        size: file.size,
-      }),
+      body: form,
     });
-    const data = (await presignRes.json()) as {
+    const data = (await res.json()) as {
       ok?: boolean;
       error?: string;
-      uploadUrl?: string;
       publicUrl?: string;
     };
-    if (!presignRes.ok || !data.ok || !data.uploadUrl || !data.publicUrl) {
+    if (!res.ok || !data.ok || !data.publicUrl) {
       throw new Error(data.error || "Import photo impossible.");
-    }
-
-    const put = await fetch(data.uploadUrl, {
-      method: "PUT",
-      headers: { "Content-Type": file.type || "image/jpeg" },
-      body: file,
-    });
-    if (!put.ok) {
-      throw new Error("L'envoi de la photo a échoué. Réessayez.");
     }
     return data.publicUrl;
   }

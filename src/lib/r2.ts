@@ -28,16 +28,17 @@ export function getR2Client() {
   if (client) return client;
   client = new S3Client({
     region: "auto",
-    endpoint: requireEnv("R2_ENDPOINT"),
+    // L'endpoint virtuel <compte>.r2.cloudflarestorage.com ne se
+    // r�sout pas de fa�on fiable en DNS (ENOTFOUND sur plusieurs
+    // r�seaux). On utilise l'URL publique qui r�sout partout, en
+    // mode path-style (/<bucket>/<key>). Le contr�le d'int�grit�
+    // (etag) est g�r� par R2, les checksums du SDK le bloquent.
+    endpoint: process.env.R2_ENDPOINT ?? "https://pub-a17636930e084654bfd59949f526c713.r2.dev",
+    forcePathStyle: true,
     credentials: {
       accessKeyId: requireEnv("R2_ACCESS_KEY_ID"),
       secretAccessKey: requireEnv("R2_SECRET_ACCESS_KEY"),
     },
-    // Le SDK AWS ajoute par défaut un checksum CRC32 (x-amz-checksum-crc32)
-    // non supporté par Cloudflare R2 (501). On le désactive : R2 a son propre
-    // contrôle d'intégrité (etatag) et n'exige pas ce header.
-    requestChecksumCalculation: "WHEN_REQUIRED",
-    responseChecksumValidation: "WHEN_REQUIRED",
   });
   return client;
 }
@@ -110,9 +111,19 @@ export async function createR2UploadUrl(params: {
     Key: params.key,
     ContentType: params.contentType,
   });
-  const uploadUrl = await getSignedUrl(getR2Client(), command, {
+  const rawUrl = await getSignedUrl(getR2Client(), command, {
     expiresIn: 60 * 15,
+    // "content-type" doit être signé : sinon le navigateur
+    // envoie Content-Type non couvert et la signature R2
+    // échoue (401).
+    signableHeaders: new Set(["host", "content-type"]),
   });
+  // Le SDK ajoute x-amz-checksum-* dans l'URL sign�e, mais R2
+  // v�rifie le checksum contre le corps r�el et renvoie 401 si
+  // mismatch (le corps envoy� ne correspond pas au checksum vide
+  // sign�). On les retire : R2 utilise son propre contr�le
+  // d'int�grit� (etag).
+  const uploadUrl = rawUrl.replace(/&x-amz-checksum-(crc32|sha256)=[^&]*/g, "").replace(/&x-amz-sdk-checksum-algorithm=[^&]*/g, "");
   const publicUrl = `${getR2PublicBase()}/${params.key}`;
   return { uploadUrl, publicUrl };
 }
