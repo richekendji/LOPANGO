@@ -5,6 +5,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { networkInterfaces } from "node:os";
 
 function requireEnv(name: string): string {
   const v = process.env[name]?.trim();
@@ -41,6 +42,20 @@ export function getR2Client() {
   return client;
 }
 
+/** IPs LAN (192.168.x.x, 10.x…) pour tester l'upload depuis le téléphone. */
+function localLanOrigins(): string[] {
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") return [];
+  const out: string[] = [];
+  for (const list of Object.values(networkInterfaces())) {
+    for (const ni of list ?? []) {
+      if (ni.family === "IPv4" && !ni.internal) {
+        out.push(`http://${ni.address}:3000`);
+      }
+    }
+  }
+  return out;
+}
+
 /** Autorise PUT depuis le site (local + Vercel) pour les uploads navigateur. */
 export async function ensureR2Cors() {
   if (corsReady) return;
@@ -49,6 +64,7 @@ export async function ensureR2Cors() {
   const origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    ...localLanOrigins(),
     site,
     vercelHost ? `https://${vercelHost}` : "",
     "https://lopango.site",
