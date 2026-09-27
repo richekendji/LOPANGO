@@ -27,14 +27,25 @@ const securityHeaders = [
  */
 const isDev = process.env.NODE_ENV === "development";
 
+// Cloudflare R2 : domaine public des médias (photos/vidéos) + endpoint S3
+// des uploads directs. Fallbacks sur les valeurs connues du projet.
+const r2PublicUrl = (
+  process.env.NEXT_PUBLIC_R2_PUBLIC_URL ??
+  "https://pub-a17636930e084654bfd59949f526c713.r2.dev"
+).replace(/\/$/, "");
+const r2UploadBase = (
+  process.env.R2_ENDPOINT ??
+  "https://e82a01a32e33243e5bd1f7c21e36144c.r2.cloudflarestorage.com"
+).replace(/\/$/, "");
+
 const cspHeader = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://connect.facebook.net`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data: https://drkctskvuppakycmqags.supabase.co https://images.unsplash.com https://www.facebook.com",
-  "media-src 'self' blob:",
+  `img-src 'self' blob: data: ${r2PublicUrl} https://*.r2.dev https://drkctskvuppakycmqags.supabase.co https://images.unsplash.com https://www.facebook.com`,
+  `media-src 'self' blob: ${r2PublicUrl} https://*.r2.dev`,
   "font-src 'self' data:",
-  "connect-src 'self' https://drkctskvuppakycmqags.supabase.co https://www.facebook.com https://connect.facebook.net https://newapi.sebpay.bj",
+  `connect-src 'self' ${r2PublicUrl} https://*.r2.dev ${r2UploadBase} https://*.r2.cloudflarestorage.com https://drkctskvuppakycmqags.supabase.co https://www.facebook.com https://connect.facebook.net https://newapi.sebpay.bj`,
   "frame-src 'self' https://www.facebook.com",
   "object-src 'none'",
   "base-uri 'self'",
@@ -50,6 +61,11 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.r2.dev",
+        pathname: "/**",
+      },
       {
         protocol: "https",
         hostname: "drkctskvuppakycmqags.supabase.co",

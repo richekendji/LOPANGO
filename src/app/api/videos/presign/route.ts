@@ -21,7 +21,7 @@ const ALLOWED_VIDEO_TYPES = new Set([
 const bodySchema = z.object({
   contentType: z.string().min(1),
   fileName: z.string().max(255).optional(),
-  size: z.number().int().positive().max(MAX_BYTES),
+  size: z.number().int().positive(),
 });
 
 export async function POST(req: Request) {
@@ -80,10 +80,14 @@ export async function POST(req: Request) {
       contentType,
     });
 
-    return NextResponse.json({ ok: true, uploadUrl, publicUrl, key });
-  } catch {
+return NextResponse.json({ ok: true, uploadUrl, publicUrl, key });
+  } catch (err) {
+    console.error(
+      "[videos/presign] erreur de préparation d'upload:",
+      err instanceof Error ? err.message : err,
+    );
     return NextResponse.json(
-      { error: "Impossible de préparer l’upload." },
+      { error: "Impossible de préparer l'upload." },
       { status: 500 },
     );
   }

@@ -32,6 +32,11 @@ export function getR2Client() {
       accessKeyId: requireEnv("R2_ACCESS_KEY_ID"),
       secretAccessKey: requireEnv("R2_SECRET_ACCESS_KEY"),
     },
+    // Le SDK AWS ajoute par défaut un checksum CRC32 (x-amz-checksum-crc32)
+    // non supporté par Cloudflare R2 (501). On le désactive : R2 a son propre
+    // contrôle d'intégrité (etatag) et n'exige pas ce header.
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
   });
   return client;
 }
@@ -40,10 +45,12 @@ export function getR2Client() {
 export async function ensureR2Cors() {
   if (corsReady) return;
   const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "";
+  const vercelHost = process.env.VERCEL_URL?.replace(/^https?:\/\//, "");
   const origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     site,
+    vercelHost ? `https://${vercelHost}` : "",
     "https://lopango.site",
     "https://www.lopango.site",
   ].filter(Boolean);
@@ -72,7 +79,16 @@ export async function createR2UploadUrl(params: {
   key: string;
   contentType: string;
 }) {
-  await ensureR2Cors();
+  // La config CORS persiste dans le bucket : un échec ne doit JAMAIS
+  // empêcher de signer l'URL (sinon upload bloqué à chaque cold start).
+  try {
+    await ensureR2Cors();
+  } catch (err) {
+    console.error(
+      "[r2] échec de l'application CORS (non bloquant):",
+      err instanceof Error ? err.message : err,
+    );
+  }
   const command = new PutObjectCommand({
     Bucket: getR2Bucket(),
     Key: params.key,

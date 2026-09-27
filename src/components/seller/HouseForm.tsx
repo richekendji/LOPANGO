@@ -139,6 +139,17 @@ function parseCount(raw: string): number {
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : NaN;
 }
 
+const MAX_PHOTOS = 20;
+
+/** Traduit les erreurs réseau/CSP du navigateur en message compréhensible. */
+function friendlyUploadError(err: Error): string {
+  const m = err.message || "";
+  if (/fetch|network|net::|load failed/i.test(m)) {
+    return "Le transfert a été bloqué par le navigateur ou la connexion. Réessaie.";
+  }
+  return m;
+}
+
 export function HouseForm({
   initial,
   houseId,
@@ -230,32 +241,51 @@ export function HouseForm({
 
   async function onPhotosSelected(files: FileList | null) {
     if (!files?.length) return;
+    const remaining = Math.max(0, MAX_PHOTOS - form.photos.length);
+    if (remaining === 0) {
+      showError("Maximum 20 photos par annonce.");
+      return;
+    }
     setPhotosLoading(true);
     setError(null);
     try {
+      const picked = Array.from(files).slice(0, remaining);
       const urls: string[] = [];
-      for (const original of Array.from(files)) {
-        if (!original.type.startsWith("image/")) {
-          showError("Seules les images sont acceptées.");
-          continue;
+      for (const original of picked) {
+        try {
+          const mime = (original.type || "").toLowerCase();
+          // Compression avant envoi (plus léger) ; sinon fichier original.
+          const compressed = await compressImageToBlob(original);
+          const supported = [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif",
+          ].includes(mime);
+          const file =
+            compressed != null
+              ? new File([compressed], original.name, { type: "image/jpeg" })
+              : original;
+          if (!supported && compressed == null) {
+            showError(
+              "Format d'image non pris en charge (HEIC, AVIF…). Convertit la photo en JPEG puis réessaie.",
+            );
+            continue;
+          }
+          urls.push(await uploadPhoto(file));
+        } catch (err) {
+          // Une photo qui échoue ne doit pas annuler tout le lot ni bloquer
+          // les suivantes : on continue avec les autres fichiers.
+          showError(
+            err instanceof Error && err.message
+              ? friendlyUploadError(err)
+              : "Impossible d'importer une photo. Réessaie.",
+          );
         }
-        // Compression avant envoi (plus léger) ; sinon fichier original.
-        const compressed = await compressImageToBlob(original);
-        const file =
-          compressed != null
-            ? new File([compressed], original.name, { type: "image/jpeg" })
-            : original;
-        urls.push(await uploadPhoto(file));
       }
       if (urls.length) {
         setForm((f) => ({ ...f, photos: [...f.photos, ...urls] }));
       }
-    } catch (err) {
-      showError(
-        err instanceof Error
-          ? err.message
-          : "Impossible d'importer une photo. Réessayez.",
-      );
     } finally {
       setPhotosLoading(false);
     }
