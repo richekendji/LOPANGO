@@ -12,6 +12,9 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
+  // Empêche Cloudflare/CDN de servir une ancienne CSP : le navigateur
+  // reçoit toujours la politique actuelle du serveur.
+  { key: "Cache-Control", value: "no-store, must-revalidate" },
 ];
 
 /**
