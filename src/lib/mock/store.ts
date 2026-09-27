@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  SEED_CONTACTS,
-  SEED_HOUSES,
   normalizeHouse,
   type ContactRequest,
   type HouseStatus,
@@ -60,11 +58,16 @@ function writeJson<T>(key: string, value: T) {
 export function getHouses(): SellerHouse[] {
   const stored = readJson<SellerHouse[] | null>(HOUSES_KEY, null);
   if (!stored || stored.length === 0) {
-    writeJson(HOUSES_KEY, SEED_HOUSES);
-    return SEED_HOUSES;
+    // Plus de maisons de démonstration : les vraies annonces viennent
+    // de la base de données (via /api/houses). Cache local = repli only.
+    return [];
   }
-  // Normalise anciennes annonces (features → champs structurés)
-  return stored.map((h) => normalizeHouse(h));
+  // Purge définitive des maisons de démo (seeds) et des photos base64 :
+  // les vraies annonces vivent en base de données.
+  const cleaned = stored.filter(
+    (h) => !h.id.startsWith("bzv-"),
+  );
+  return cleaned.map((h) => normalizeHouse(h));
 }
 
 export function getHouse(id: string): SellerHouse | undefined {
@@ -105,11 +108,8 @@ export function setHouseStatus(id: string, status: HouseStatus) {
 
 export function getContacts(): ContactRequest[] {
   const stored = readJson<ContactRequest[] | null>(CONTACTS_KEY, null);
-  if (!stored) {
-    writeJson(CONTACTS_KEY, SEED_CONTACTS);
-    return SEED_CONTACTS;
-  }
-  return stored;
+  // Plus de contacts de démonstration : seuls les vrais messages comptent.
+  return stored ?? [];
 }
 
 export function saveContact(contact: ContactRequest) {

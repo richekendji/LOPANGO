@@ -10,7 +10,7 @@ import {
   type SellerHouse,
 } from "@/lib/mock/houses";
 import { getHouseAccess } from "@/app/actions/agents";
-import { getMockHouse } from "@/lib/mock/server-houses";
+import { getHouseFromDb } from "@/lib/houses-db";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,7 @@ export default async function HousePublicPage({
 
   // Décision d'accès 100 % SERVEUR (abonnement DB + agent_houses).
   const access = await getHouseAccess(id);
-  const full = await getMockHouse(id);
+  const full = await getHouseFromDb(id);
 
   const notFound = !full || full.status !== "active";
   if (notFound) {

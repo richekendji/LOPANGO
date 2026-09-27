@@ -5,14 +5,29 @@ import { useEffect, useState } from "react";
 import { SellerShell } from "@/components/seller/SellerShell";
 import { HouseForm } from "@/components/seller/HouseForm";
 import type { SellerHouse } from "@/lib/mock/houses";
-import { getHouse } from "@/lib/mock/store";
 
 export default function EditHousePage() {
   const { id } = useParams<{ id: string }>();
   const [house, setHouse] = useState<SellerHouse | null | undefined>(undefined);
 
   useEffect(() => {
-    setHouse(getHouse(id) ?? null);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/houses/mine", { cache: "no-store" });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          houses?: SellerHouse[];
+        };
+        const found = (data.houses ?? []).find((h) => h.id === id) ?? null;
+        if (!cancelled) setHouse(found);
+      } catch {
+        if (!cancelled) setHouse(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (house === undefined) {

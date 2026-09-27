@@ -11,23 +11,35 @@ import {
   type HouseStatus,
   type SellerHouse,
 } from "@/lib/mock/houses";
-import { getHouses, subscribeStore } from "@/lib/mock/store";
 
 type Filter = "all" | HouseStatus;
 
 export default function HousesListPage() {
-  const [houses, setHouses] = useState<SellerHouse[]>([]);
+  const [houses, setHouses] = useState<SellerHouse[] | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
 
   useEffect(() => {
-    const refresh = () => setHouses(getHouses());
-    refresh();
-    return subscribeStore(refresh);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/houses/mine", { cache: "no-store" });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          houses?: SellerHouse[];
+        };
+        if (!cancelled) setHouses(data.houses ?? []);
+      } catch {
+        if (!cancelled) setHouses([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const filtered = useMemo(() => {
-    return houses.filter((h) => {
+    return (houses ?? []).filter((h) => {
       if (filter !== "all" && h.status !== filter) return false;
       const hay = `${h.title} ${h.city} ${h.neighborhood}`.toLowerCase();
       return hay.includes(q.trim().toLowerCase());
@@ -80,7 +92,11 @@ export default function HousesListPage() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {houses === null ? (
+        <div className="rounded-[1.5rem] bg-white p-10 text-center text-sm text-zinc-500 shadow-sm">
+          Chargement…
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-[1.5rem] bg-white p-10 text-center text-sm text-zinc-500 shadow-sm">
           Aucune annonce pour ce filtre.
         </div>

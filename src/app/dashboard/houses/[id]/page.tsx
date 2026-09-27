@@ -13,25 +13,43 @@ import {
   type HouseStatus,
   type SellerHouse,
 } from "@/lib/mock/houses";
-import {
-  deleteHouse,
-  getHouse,
-  setHouseStatus,
-  subscribeStore,
-} from "@/lib/mock/store";
 
 const CYCLE: HouseStatus[] = ["draft", "active", "hidden"];
 
 export default function HouseDetailSellerPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [house, setHouse] = useState<SellerHouse | null>(null);
+  const [house, setHouse] = useState<SellerHouse | null | undefined>(undefined);
 
   useEffect(() => {
-    const refresh = () => setHouse(getHouse(id) ?? null);
-    refresh();
-    return subscribeStore(refresh);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/houses/mine", { cache: "no-store" });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          houses?: SellerHouse[];
+        };
+        const found = (data.houses ?? []).find((h) => h.id === id) ?? null;
+        if (!cancelled) setHouse(found);
+      } catch {
+        if (!cancelled) setHouse(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
+
+  if (house === undefined) {
+    return (
+      <SellerShell title="Annonce" backHref="/dashboard/houses">
+        <div className="rounded-[1.5rem] bg-white p-8 text-center text-sm text-zinc-500 shadow-sm">
+          Chargement…
+        </div>
+      </SellerShell>
+    );
+  }
 
   if (!house) {
     return (
@@ -48,13 +66,20 @@ export default function HouseDetailSellerPage() {
   function cycleStatus() {
     const i = CYCLE.indexOf(house!.status);
     const next = CYCLE[(i + 1) % CYCLE.length];
-    setHouseStatus(house!.id, next);
+    void fetch(`/api/houses/${house!.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: next }),
+    })
+      .then(() => setHouse({ ...house!, status: next }))
+      .catch(() => {});
   }
 
   function onDelete() {
     if (!confirm("Supprimer définitivement cette annonce ?")) return;
-    deleteHouse(house!.id);
-    router.push("/dashboard/houses");
+    void fetch(`/api/houses/${house!.id}`, { method: "DELETE" })
+      .then(() => router.push("/dashboard/houses"))
+      .catch(() => {});
   }
 
   return (

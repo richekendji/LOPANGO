@@ -33,6 +33,8 @@ export function isAdminPhone(phone: string | null | undefined): boolean {
 
 /** L'utilisateur connecté est-il l'admin (numéro ADMIN_PHONES) ?
  * Il publie et consulte tout sans abonnement.
+ * Source UNIQUE : profiles.phone (user_metadata est modifiable
+ * par l'utilisateur lui-même — jamais utilisé pour une décision admin).
  */
 export async function isAdminUser(): Promise<boolean> {
   try {

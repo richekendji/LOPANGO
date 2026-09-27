@@ -443,8 +443,51 @@ export function HouseForm({
         }
       }
 
-      // Sauvegarde locale — purge d'abord les anciennes photos base64
-      // (elles saturaient le stockage), puis enregistrement.
+      // Sauvegarde en BASE DE DONNÉES — l'annonce devient visible par tous.
+      const isEdit = Boolean(draftId || initial?.id);
+      const apiRes = await fetch(
+        isEdit ? `/api/houses/${house.id}` : "/api/houses",
+        {
+          method: isEdit ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            isEdit
+              ? { house }
+              : {
+                  id: house.id,
+                  title: house.title,
+                  description: house.description,
+                  price: house.price,
+                  phone: house.phone,
+                  ownerName: house.ownerName,
+                  showOwnerName: house.showOwnerName,
+                  city: house.city,
+                  neighborhood: house.neighborhood,
+                  street: house.street,
+                  avenue: house.avenue,
+                  reference: house.reference,
+                  houseType: house.houseType,
+                  photos: house.photos,
+                  videos: house.videos ?? [],
+                  bedrooms: house.bedrooms,
+                  kitchens: house.kitchens,
+                  livingRooms: house.livingRooms,
+                  showerInHouse: house.showerInHouse,
+                  showers: house.showers,
+                  housesOnPlot: house.housesOnPlot,
+                  status: house.status,
+                  contacts: house.contacts ?? 0,
+                },
+          ),
+        },
+      );
+      const apiData = (await apiRes.json()) as { ok?: boolean; error?: string };
+      if (!apiRes.ok || !apiData.ok) {
+        showError(apiData.error ?? "Publication impossible. Réessaie.");
+        return;
+      }
+
+      // Cache local (purge des anciennes photos base64 au passage).
       try {
         replaceHouses(
           getHouses().map((h) => ({
@@ -456,10 +499,7 @@ export function HouseForm({
         clearHouseFormDraft(draftId);
         if (!draftId) clearHouseFormDraft(null);
       } catch {
-        showError(
-          "Impossible d'enregistrer l'annonce localement (stockage plein). Supprime des photos lourdes ou libère de l'espace puis réessaie.",
-        );
-        return;
+        /* Le stockage local n'est plus critique : l'annonce est en base. */
       }
 
       // Démarcheur : lie l'annonce à son compte avec un snapshot des infos
@@ -499,6 +539,8 @@ export function HouseForm({
       }
 
       router.push(`/dashboard/houses/${house.id}`);
+    } catch {
+      showError("Erreur réseau. Réessaie.");
     } finally {
       setSubmitting(false);
     }

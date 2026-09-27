@@ -11,8 +11,8 @@ import {
   formatHouseSpecsShort,
   type HouseType,
 } from "@/lib/mock/houses";
-import { getHouses, subscribeStore } from "@/lib/mock/store";
-import { houseMatchesQuery } from "@/lib/search";
+import type { SellerHouse } from "@/lib/mock/houses";
+
 import { fbqTrack } from "@/lib/analytics/fbq";
 import { SelectField } from "@/components/SelectField";
 
@@ -28,7 +28,8 @@ type SearchDraft = {
 };
 
 export default function SearchPage() {
-  const [houses, setHouses] = useState<ReturnType<typeof getHouses>>([]);
+  const [houses, setHouses] = useState<SellerHouse[] | null>(null);
+  const [results, setResults] = useState<SellerHouse[] | null>(null);
   const [query, setQuery] = useState("");
   const [committedQuery, setCommittedQuery] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
@@ -37,6 +38,25 @@ export default function SearchPage() {
   const [maxPrice, setMaxPrice] = useState("");
   const [ready, setReady] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/houses", { cache: "no-store" });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          houses?: SellerHouse[];
+        };
+        if (!cancelled) setHouses(data.houses ?? []);
+      } catch {
+        if (!cancelled) setHouses([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -54,9 +74,6 @@ export default function SearchPage() {
       /* ignore */
     }
     setReady(true);
-    const refresh = () => setHouses(getHouses());
-    refresh();
-    return subscribeStore(refresh);
   }, []);
 
   useEffect(() => {
@@ -82,7 +99,7 @@ export default function SearchPage() {
 
   const neighborhoods = useMemo(() => {
     const set = new Set(
-      houses
+      (houses ?? [])
         .filter((h) => h.status === "active")
         .map((h) => h.neighborhood)
         .filter(Boolean),
@@ -90,24 +107,43 @@ export default function SearchPage() {
     return Array.from(set).sort();
   }, [houses]);
 
-  const results = useMemo(() => {
-    const q = committedQuery.trim();
-    const min = minPrice ? Math.round(Number(minPrice)) : null;
-    const max = maxPrice ? Math.round(Number(maxPrice)) : null;
-
-    return houses.filter((h) => {
-      if (h.status !== "active") return false;
-
-      if (neighborhood && h.neighborhood !== neighborhood) return false;
-      if (houseType && (h.houseType ?? "Maison") !== houseType) return false;
-      if (min !== null && !Number.isNaN(min) && h.price < min) return false;
-      if (max !== null && !Number.isNaN(max) && h.price > max) return false;
-
-      if (!q) return true;
-
-      return houseMatchesQuery(h, q);
-    });
-  }, [houses, committedQuery, neighborhood, houseType, minPrice, maxPrice]);
+  // Recherche SERVEUR : filtres appliqués sur les données complètes
+  // (rue, avenue, référence incluses), réponses renvoyées masquées.
+  useEffect(() => {
+    if (!ready) return;
+    let cancelled = false;
+    const params = new URLSearchParams();
+    if (committedQuery.trim()) params.set("q", committedQuery.trim());
+    if (neighborhood) params.set("neighborhood", neighborhood);
+    if (houseType) params.set("houseType", houseType);
+    if (minPrice) params.set("minPrice", minPrice);
+    if (maxPrice) params.set("maxPrice", maxPrice);
+    void (async () => {
+      try {
+        const qs = params.toString();
+        const res = await fetch(`/api/houses${qs ? `?${qs}` : ""}`, {
+          cache: "no-store",
+        });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          houses?: SellerHouse[];
+        };
+        if (!cancelled) setResults(data.houses ?? []);
+      } catch {
+        if (!cancelled) setResults([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    ready,
+    committedQuery,
+    neighborhood,
+    houseType,
+    minPrice,
+    maxPrice,
+  ]);
 
   function runSearch(e?: React.FormEvent) {
     e?.preventDefault();
@@ -272,28 +308,32 @@ export default function SearchPage() {
       )}
 
       <div ref={resultsRef} className="mt-5 scroll-mt-4">
-        <p className="text-xs font-medium text-zinc-400">
-          {committedQuery ? (
-            <>
-              Résultats pour « {committedQuery} » — {results.length} maison
-              {results.length !== 1 ? "s" : ""}
-            </>
-          ) : (
-            <>
-              {results.length} résultat{results.length !== 1 ? "s" : ""}
-              {!hasCriteria && " — tape un mot-clé puis Entrée"}
-            </>
-          )}
-        </p>
+        {results === null ? (
+          <p className="text-xs font-medium text-zinc-400">Recherche…</p>
+        ) : (
+          <>
+            <p className="text-xs font-medium text-zinc-400">
+              {committedQuery ? (
+                <>
+                  Résultats pour « {committedQuery} » — {results.length} maison
+                  {results.length !== 1 ? "s" : ""}
+                </>
+              ) : (
+                <>
+                  {results.length} résultat{results.length !== 1 ? "s" : ""}
+                  {!hasCriteria && " — tape un mot-clé puis Entrée"}
+                </>
+              )}
+            </p>
 
-        <div className="mt-3 space-y-4">
-          {results.length === 0 ? (
-            <div className="rounded-[1.5rem] bg-white p-8 text-center text-sm text-zinc-500 shadow-sm">
-              {committedQuery || hasCriteria
-                ? "Aucune maison ne correspond à votre recherche."
-                : "Lance une recherche pour voir les maisons."}
-            </div>
-          ) : (
+            <div className="mt-3 space-y-4">
+              {results.length === 0 ? (
+                <div className="rounded-[1.5rem] bg-white p-8 text-center text-sm text-zinc-500 shadow-sm">
+                  {committedQuery || hasCriteria
+                    ? "Aucune maison ne correspond à votre recherche."
+                    : "Lance une recherche pour voir les maisons."}
+                </div>
+              ) : (
             results.map((h) => (
               <Link
                 key={h.id}
@@ -335,7 +375,9 @@ export default function SearchPage() {
               </Link>
             ))
           )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
