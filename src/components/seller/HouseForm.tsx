@@ -145,7 +145,7 @@ const MAX_PHOTOS = 20;
 function friendlyUploadError(err: Error): string {
   const m = err.message || "";
   if (/fetch|network|net::|load failed/i.test(m)) {
-    return "Le transfert a été bloqué par le navigateur ou la connexion. Réessaie.";
+    return `Le transfert a été bloqué par le navigateur ou la connexion. (détail: ${m})`;
   }
   return m;
 }
