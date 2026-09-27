@@ -156,10 +156,7 @@ function uploadWithProgress(
 
 type ProgressCb = (message: string) => void;
 
-/**
- * Upload une vidéo vers Cloudflare R2 (URL publique).
- * Nom conservé pour le formulaire existant.
- */
+/** Upload une vidéo vers Cloudflare R2 (côté serveur). */
 export async function compressAndStoreVideo(
   file: File,
   onProgress?: ProgressCb,
@@ -183,29 +180,25 @@ export async function compressAndStoreVideo(
     if (err instanceof Error && err.message.includes("trop longue")) throw err;
   }
 
-  onProgress?.("Préparation de l’upload…");
-  const res = await fetch("/api/videos/presign", {
+  onProgress?.("Préparation de l'envoi…");
+  const form = new FormData();
+  form.append("file", file);
+
+  const res = await fetch("/api/videos/upload", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contentType: file.type || "video/mp4",
-      fileName: file.name || `video${extFromFile(file)}`,
-      size: file.size,
-    }),
+    body: form,
   });
 
   const data = (await res.json()) as {
     ok?: boolean;
     error?: string;
-    uploadUrl?: string;
     publicUrl?: string;
   };
 
-  if (!res.ok || !data.ok || !data.uploadUrl || !data.publicUrl) {
-    throw new Error(data.error || "Impossible de préparer l’envoi de la vidéo.");
+  if (!res.ok || !data.ok || !data.publicUrl) {
+    throw new Error(data.error || "Impossible d'envoyer la vidéo.");
   }
 
-  await uploadWithProgress(data.uploadUrl, file, onProgress);
   onProgress?.("Vidéo enregistrée.");
   return data.publicUrl;
 }

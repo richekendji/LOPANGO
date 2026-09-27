@@ -28,13 +28,7 @@ export function getR2Client() {
   if (client) return client;
   client = new S3Client({
     region: "auto",
-    // L'endpoint virtuel <compte>.r2.cloudflarestorage.com ne se
-    // r�sout pas de fa�on fiable en DNS (ENOTFOUND sur plusieurs
-    // r�seaux). On utilise l'URL publique qui r�sout partout, en
-    // mode path-style (/<bucket>/<key>). Le contr�le d'int�grit�
-    // (etag) est g�r� par R2, les checksums du SDK le bloquent.
-    endpoint: process.env.R2_ENDPOINT ?? "https://pub-a17636930e084654bfd59949f526c713.r2.dev",
-    forcePathStyle: true,
+    endpoint: requireEnv("R2_ENDPOINT"),
     credentials: {
       accessKeyId: requireEnv("R2_ACCESS_KEY_ID"),
       secretAccessKey: requireEnv("R2_SECRET_ACCESS_KEY"),
