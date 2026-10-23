@@ -1,17 +1,23 @@
--- Supabase Schema Migration
--- Generated for new Supabase project
--- Project: https://ijtjstlotvdygrrimogo.supabase.co
+-- ============================================================
+-- LOPANGO — Schéma complet consolidé
+-- Projet Supabase : https://ijtjstlotvdygrrimogo.supabase.co
+--
+-- Remplace les anciennes migrations incrémentales (perdues avec
+-- l'ancien projet). À exécuter une seule fois dans le SQL Editor
+-- d'un projet Supabase NEUF.
+-- ============================================================
 
--- Enable required extensions
 create extension if not exists "pgcrypto";
 
--- Create tables
+-- ------------------------------------------------------------
+-- Tables
+-- ------------------------------------------------------------
 
--- Houses table
-create table if not exists houses (
+-- Annonces (source de vérité, lecture publique).
+create table if not exists public.houses (
   id text primary key default gen_random_uuid()::text,
-  owner_id uuid,
-  title text not null,
+  owner_id uuid references auth.users (id) on delete set null,
+  title text,
   description text,
   price integer,
   city text,
@@ -20,54 +26,56 @@ create table if not exists houses (
   avenue text,
   reference text,
   house_type text,
-  bedrooms integer,
-  kitchens integer,
-  living_rooms integer,
+  bedrooms integer default 0,
+  kitchens integer default 0,
+  living_rooms integer default 0,
   shower_in_house boolean default true,
-  showers integer,
+  showers integer default 0,
   houses_on_plot integer default 1,
   owner_name text,
   show_owner_name boolean default true,
   contact_phone text,
-  status text check (status in ('draft', 'inactive', 'active', 'hidden')) default 'draft',
-  videos jsonb default '[]',
+  status text default 'draft'
+    check (status = any (array['draft', 'inactive', 'active', 'hidden'])),
+  videos jsonb not null default '[]'::jsonb,
   contacts integer default 0,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
--- House photos table
-create table if not exists house_photos (
-  house_id text references houses(id) on delete cascade,
-  url text not null,
-  position integer not null,
-  primary key (house_id, url)
-);
-
--- Profiles table
-create table if not exists profiles (
-  id uuid primary key references auth.users,
-  full_name text,
-  phone text,
-  email text,
-  role text check (role in ('tenant', 'owner', 'admin')) default 'tenant',
   created_at timestamptz default now()
 );
 
--- Agents table
-create table if not exists agents (
+-- Photos rattachées à une annonce.
+create table if not exists public.house_photos (
+  house_id text not null references public.houses (id) on delete cascade,
+  url text not null,
+  position integer,
+  primary key (house_id, url)
+);
+
+-- Profils utilisateurs (miroir de auth.users).
+create table if not exists public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  full_name text,
+  phone text,
+  email text,
+  role text default 'tenant',
+  created_at timestamptz default now()
+);
+
+-- Démarcheurs (liste blanche) gérée par l'admin.
+create table if not exists public.agents (
   id uuid primary key default gen_random_uuid(),
   phone text unique not null,
   label text,
   email text,
   active boolean default true,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  constraint agents_email_valid
+    check (email is null or email = '' or email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$')
 );
 
--- Agent houses table
-create table if not exists agent_houses (
-  house_id text references houses(id) on delete cascade,
-  agent_id uuid references agents(id) on delete cascade,
+-- Annonces publiées par les démarcheurs (snapshot visible admin).
+create table if not exists public.agent_houses (
+  house_id text not null references public.houses (id) on delete cascade,
+  agent_id uuid not null references public.agents (id) on delete cascade,
   title text,
   price integer,
   city text,
@@ -77,80 +85,100 @@ create table if not exists agent_houses (
   primary key (house_id, agent_id)
 );
 
--- Subscriptions table
-create table if not exists subscriptions (
-  id uuid primary key,
-  user_id uuid references auth.users,
-  role text check (role in ('tenant', 'owner')) not null,
+-- Abonnements (tenant + owner).
+create table if not exists public.subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete cascade,
+  role text not null check (role = any (array['tenant', 'owner'])),
   amount integer,
-  status text default 'active' check (status in ('active', 'inactive', 'cancelled', 'expired')),
+  status text default 'active'
+    check (status = any (array['active', 'inactive', 'cancelled', 'expired'])),
   starts_at timestamptz,
   expires_at timestamptz,
   payment_method text,
   transaction_id text
 );
 
--- Reclamations table
-create table if not exists reclamations (
-  id uuid primary key,
-  user_id uuid references auth.users,
+-- Réclamations utilisateurs.
+create table if not exists public.reclamations (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete cascade,
   subject text,
   message text,
-  status text default 'open' check (status in ('open', 'in_progress', 'resolved')),
+  status text default 'open'
+    check (status = any (array['open', 'in_progress', 'resolved'])),
   admin_reply text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
 
--- Rate limit buckets table
-create table if not exists rate_limit_buckets (
+-- Messages de contact liés à une annonce (héritage).
+create table if not exists public.contacts (
+  id uuid primary key default gen_random_uuid(),
+  name text,
+  phone text,
+  message text,
+  house_id text references public.houses (id) on delete set null,
+  created_at timestamptz default now()
+);
+
+-- Compteurs de rate limiting (accès service_role uniquement).
+create table if not exists public.rate_limit_buckets (
   key text primary key,
   hits integer default 0,
   resets_at timestamptz,
   updated_at timestamptz default now()
 );
 
--- Enable RLS on all tables
-alter table houses enable row level security;
-alter table house_photos enable row level security;
-alter table profiles enable row level security;
-alter table agents enable row level security;
-alter table agent_houses enable row level security;
-alter table subscriptions enable row level security;
-alter table reclamations enable row level security;
-alter table rate_limit_buckets enable row level security;
+-- ------------------------------------------------------------
+-- Row Level Security
+-- ------------------------------------------------------------
 
--- Policies
+alter table public.houses enable row level security;
+alter table public.house_photos enable row level security;
+alter table public.profiles enable row level security;
+alter table public.agents enable row level security;
+alter table public.agent_houses enable row level security;
+alter table public.subscriptions enable row level security;
+alter table public.reclamations enable row level security;
+alter table public.contacts enable row level security;
+alter table public.rate_limit_buckets enable row level security;
 
--- Houses policies
-create policy "Select public" on houses for select using (true);
--- No insert/update/delete for anon (service_role bypasses)
+-- Lecture publique du catalogue (feed + fiches).
+drop policy if exists houses_select_public on public.houses;
+create policy houses_select_public on public.houses
+  for select using (true);
 
--- House photos policies
-create policy "Select public" on house_photos for select using (true);
--- No insert/update/delete for anon (service_role bypasses)
+drop policy if exists house_photos_select_public on public.house_photos;
+create policy house_photos_select_public on public.house_photos
+  for select using (true);
 
--- Profiles policies
-create policy "Select self" on profiles for select using (id = auth.uid());
+-- Profil : un utilisateur connecté lit le sien.
+drop policy if exists profiles_select_self on public.profiles;
+create policy profiles_select_self on public.profiles
+  for select using (id = auth.uid());
 
--- Subscriptions policies
-create policy "Select own" on subscriptions for select using (user_id = auth.uid());
+-- Abonnement : un utilisateur connecté lit le sien.
+drop policy if exists subscriptions_select_self on public.subscriptions;
+create policy subscriptions_select_self on public.subscriptions
+  for select using (user_id = auth.uid());
 
--- Reclamations policies
-create policy "Insert own" on reclamations for insert with check (user_id = auth.uid());
-create policy "Select own" on reclamations for select using (user_id = auth.uid());
+-- Réclamations : l'utilisateur crée et lit les siennes.
+drop policy if exists reclamations_insert_self on public.reclamations;
+create policy reclamations_insert_self on public.reclamations
+  for insert with check (user_id = auth.uid());
 
--- Agent houses policies
-create policy "Select public" on agent_houses for select using (true);
--- No insert/update/delete for anon (service_role bypasses)
+drop policy if exists reclamations_select_self on public.reclamations;
+create policy reclamations_select_self on public.reclamations
+  for select using (user_id = auth.uid());
 
--- Rate limit buckets policies
-create policy "Service role only" on rate_limit_buckets for all using (false);
--- Service role only, bypasses all RLS
+-- Écritures annonces/agents/profils : service_role uniquement
+-- (bypass RLS). Aucune policy anon/authenticated n'est créée.
 
--- Functions
+-- ------------------------------------------------------------
+-- Fonction RPC : rate limiting atomique (service_role)
+-- ------------------------------------------------------------
 
--- Rate limit function
 create or replace function public.consume_rate_limit(
   p_key text,
   p_limit integer,
@@ -161,7 +189,7 @@ security definer
 set search_path = public
 as $$
   with upsert as (
-    insert into rate_limit_buckets (key, hits, resets_at, updated_at)
+    insert into public.rate_limit_buckets (key, hits, resets_at, updated_at)
     values (
       p_key,
       1,
@@ -170,21 +198,19 @@ as $$
     )
     on conflict (key) do update
       set hits = case
-        when rate_limit_buckets.resets_at <= now()
-          then 1
-          else rate_limit_buckets.hits + 1
-        end,
-        resets_at = case
-          when rate_limit_buckets.resets_at <= now()
-            then now() + (p_window_sec * interval '1 second')
-            else rate_limit_buckets.resets_at
+            when public.rate_limit_buckets.resets_at <= now() then 1
+            else public.rate_limit_buckets.hits + 1
           end,
-        updated_at = now()
-    returning hits, resets_at
+          resets_at = case
+            when public.rate_limit_buckets.resets_at <= now()
+              then now() + (p_window_sec * interval '1 second')
+            else public.rate_limit_buckets.resets_at
+          end,
+          updated_at = now()
+    returning hits
   )
   select hits <= p_limit from upsert;
 $$;
 
--- Revoke execute on function from anon and authenticated
-revoke execute on function public.consume_rate_limit from anon;
-revoke execute on function public.consume_rate_limit from authenticated;
+revoke execute on function public.consume_rate_limit(text, integer, integer) from anon;
+revoke execute on function public.consume_rate_limit(text, integer, integer) from authenticated;

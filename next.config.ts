@@ -59,14 +59,20 @@ const r2BucketHost = `${
   "e82a01a32e33243e5bd1f7c21e36144c.r2.cloudflarestorage.com",
 )}`;
 
+// Hôte Supabase dérivé de l'environnement (CSP + images distantes).
+const supabaseHost = r2Hostname(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  "ijtjstlotvdygrrimogo.supabase.co",
+);
+
 const cspHeader = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://connect.facebook.net`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' blob: data: ${r2PublicUrl} https://*.r2.dev https://drkctskvuppakycmqags.supabase.co https://images.unsplash.com https://www.facebook.com`,
+  `img-src 'self' blob: data: ${r2PublicUrl} https://*.r2.dev https://${supabaseHost} https://images.unsplash.com https://www.facebook.com`,
   `media-src 'self' blob: ${r2PublicUrl} https://*.r2.dev`,
   "font-src 'self' data:",
-  `connect-src 'self' ${r2PublicUrl} https://*.r2.dev ${r2UploadBase} https://*.r2.cloudflarestorage.com https://${r2BucketHost} https://drkctskvuppakycmqags.supabase.co https://www.facebook.com https://connect.facebook.net https://newapi.sebpay.bj`,
+  `connect-src 'self' ${r2PublicUrl} https://*.r2.dev ${r2UploadBase} https://*.r2.cloudflarestorage.com https://${r2BucketHost} https://${supabaseHost} https://www.facebook.com https://connect.facebook.net https://newapi.sebpay.bj`,
   "frame-src 'self' https://www.facebook.com",
   "object-src 'none'",
   "base-uri 'self'",
@@ -89,7 +95,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "drkctskvuppakycmqags.supabase.co",
+        hostname: supabaseHost,
         pathname: "/storage/v1/object/public/**",
       },
       {
