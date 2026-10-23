@@ -1,5 +1,7 @@
 import {
   DeleteObjectCommand,
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
   PutBucketCorsCommand,
   PutObjectCommand,
   S3Client,
@@ -137,8 +139,104 @@ export async function deleteR2Object(key: string) {
   );
 }
 
+/** Convertit une URL publique R2 en clé d'objet (ou null si externe). */
 export function publicUrlToR2Key(url: string): string | null {
-  const base = process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.replace(/\/$/, "");
-  if (!base || !url.startsWith(base + "/")) return null;
+  const base = getR2PublicBase();
+  if (!url.startsWith(base + "/")) return null;
   return decodeURIComponent(url.slice(base.length + 1));
+}
+
+/**
+ * Supprime de R2 une liste d'URLs publiques (photos + vidéos).
+ * Les URLs externes / non-R2 sont ignorées. Suppression par lots de 1000.
+ * Idempotent : supprimer une clé absente ne lève pas d'erreur.
+ * Retourne le nombre d'objets traités.
+ */
+export async function deleteR2Objects(urls: string[]): Promise<number> {
+  const keys = Array.from(
+    new Set(
+      urls
+        .map((u) => publicUrlToR2Key(u))
+        .filter((k): k is string => Boolean(k)),
+    ),
+  );
+  if (keys.length === 0) return 0;
+
+  const client = getR2Client();
+  const bucket = getR2Bucket();
+  let count = 0;
+
+  for (let i = 0; i < keys.length; i += 1000) {
+    const batch = keys.slice(i, i + 1000);
+    try {
+      await client.send(
+        new DeleteObjectsCommand({
+          Bucket: bucket,
+          Delete: { Objects: batch.map((Key) => ({ Key })), Quiet: true },
+        }),
+      );
+      count += batch.length;
+    } catch (err) {
+      // Repli objet par objet pour ne pas perdre tout le lot.
+      console.error(
+        "[r2] delete batch failed, fallback:",
+        err instanceof Error ? err.message : err,
+      );
+      for (const Key of batch) {
+        try {
+          await client.send(new DeleteObjectCommand({ Bucket: bucket, Key }));
+          count += 1;
+        } catch (e) {
+          console.error(
+            "[r2] delete failed:",
+            Key,
+            e instanceof Error ? e.message : e,
+          );
+        }
+      }
+    }
+  }
+  return count;
+}
+
+/** Liste toutes les clés du bucket (pagination). */
+export async function listAllR2Keys(): Promise<string[]> {
+  const client = getR2Client();
+  const bucket = getR2Bucket();
+  const keys: string[] = [];
+  let token: string | undefined;
+  do {
+    const res = await client.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        ContinuationToken: token,
+      }),
+    );
+    for (const obj of res.Contents ?? []) {
+      if (obj.Key) keys.push(obj.Key);
+    }
+    token = res.IsTruncated ? res.NextContinuationToken : undefined;
+  } while (token);
+  return keys;
+}
+
+/** Vide entièrement le bucket R2. Retourne le nombre d'objets supprimés. */
+export async function emptyR2Bucket(): Promise<number> {
+  const keys = await listAllR2Keys();
+  if (keys.length === 0) return 0;
+
+  const client = getR2Client();
+  const bucket = getR2Bucket();
+  let count = 0;
+  for (let i = 0; i < keys.length; i += 1000) {
+    const batch = keys.slice(i, i + 1000);
+    await client.send(
+      new DeleteObjectsCommand({
+        Bucket: bucket,
+        Delete: { Objects: batch.map((Key) => ({ Key })), Quiet: true },
+      }),
+    );
+    count += batch.length;
+  }
+  return count;
 }

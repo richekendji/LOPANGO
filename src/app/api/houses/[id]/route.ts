@@ -3,6 +3,7 @@ import { z } from "zod";
 import { deleteDbHouse, getHouseFromDb, updateDbHouse, updateHouseStatus } from "@/lib/houses-db";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
+import { deleteR2Objects } from "@/lib/r2";
 import { maskHouseForPaywall } from "@/lib/mock/houses";
 import type { SellerHouse } from "@/lib/mock/houses";
 
@@ -167,6 +168,18 @@ export async function DELETE(
     const result = await deleteDbHouse(id);
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+    // Nettoie les médias de l'annonce sur R2 (photos + vidéos).
+    try {
+      await deleteR2Objects([
+        ...(house.photos ?? []),
+        ...(house.videos ?? []),
+      ]);
+    } catch (err) {
+      console.error(
+        "[houses] R2 cleanup failed:",
+        err instanceof Error ? err.message : err,
+      );
     }
     return NextResponse.json({ ok: true });
   } catch {

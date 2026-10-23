@@ -281,10 +281,29 @@ export function HouseForm({
   }
 
   function removePhoto(url: string) {
+    // Photo déjà enregistrée en base : elle sera supprimée de R2 au PATCH
+    // (updateDbHouse compare anciens/nouveaux médias). On ne la supprime pas
+    // tout de suite pour ne pas casser l'annonce si l'utilisateur annule.
+    const wasPersisted = (initial?.photos ?? []).includes(url);
     update(
       "photos",
       form.photos.filter((p) => p !== url),
     );
+    if (wasPersisted) return;
+
+    // Photo tout juste ajoutée (pas encore en base) : on nettoie R2 pour
+    // éviter un fichier orphelin.
+    const base = (process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? "").replace(
+      /\/$/,
+      "",
+    );
+    if (base && url.startsWith(base + "/")) {
+      void fetch(`/api/photos?url=${encodeURIComponent(url)}`, {
+        method: "DELETE",
+      }).catch(() => {
+        /* best-effort : le retrait de l'interface reste prioritaire */
+      });
+    }
   }
 
   async function onVideosSelected(files: FileList | null) {
@@ -323,11 +342,14 @@ export function HouseForm({
   }
 
   async function removeVideo(ref: string) {
-    await deleteVideoBlob(ref);
+    const wasPersisted = (initial?.videos ?? []).includes(ref);
     update(
       "videos",
       form.videos.filter((v) => v !== ref),
     );
+    // Vidéo déjà en base : nettoyée de R2 au PATCH. Vidéo fraîchement
+    // ajoutée : supprimée de R2 tout de suite pour éviter un orphelin.
+    if (!wasPersisted) await deleteVideoBlob(ref);
   }
 
   function validate(): string | null {

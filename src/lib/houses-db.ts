@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { deleteR2Objects } from "@/lib/r2";
 import { normalizeHouse, type SellerHouse } from "@/lib/mock/houses";
 
 type HouseRow = {
@@ -209,12 +210,18 @@ export async function updateDbHouse(
   // Vérifie l'existence et la propriété AVANT toute écriture.
   const { data: existing } = await admin
     .from("houses")
-    .select("owner_id")
+    .select("owner_id, videos")
     .eq("id", id)
     .maybeSingle();
   if (!existing) {
     return { ok: false, error: "Annonce introuvable." };
   }
+
+  // Médias actuels (pour supprimer de R2 ceux retirés à la mise à jour).
+  const [{ data: oldPhotoRows }, oldVideos] = await Promise.all([
+    admin.from("house_photos").select("url").eq("house_id", id),
+    Promise.resolve((existing as { videos: string[] | null }).videos ?? []),
+  ]);
   if (ownerId && (existing as { owner_id: string | null }).owner_id !== ownerId) {
     return { ok: false, error: "Non autorisé." };
   }
@@ -248,6 +255,23 @@ export async function updateDbHouse(
       console.error("[houses-db] photos insert error:", photoError.message);
     }
   }
+
+  // Supprime de R2 les médias qui ne font plus partie de l'annonce.
+  try {
+    const newPhotoUrls = new Set(house.photos ?? []);
+    const removedPhotos = ((oldPhotoRows ?? []) as { url: string }[])
+      .map((p) => p.url)
+      .filter((u) => !newPhotoUrls.has(u));
+    const newVideos = new Set(house.videos ?? []);
+    const removedVideos = oldVideos.filter((v) => !newVideos.has(v));
+    await deleteR2Objects([...removedPhotos, ...removedVideos]);
+  } catch (err) {
+    console.error(
+      "[houses-db] R2 cleanup error:",
+      err instanceof Error ? err.message : err,
+    );
+  }
+
   return { ok: true };
 }
 
