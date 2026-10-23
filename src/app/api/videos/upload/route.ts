@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getR2Client, getR2Bucket, getR2PublicBase } from "@/lib/r2";
 import { newId } from "@/lib/mock/houses";
@@ -18,8 +17,8 @@ const ALLOWED_VIDEO_TYPES = new Set([
   "video/mpeg",
 ]);
 
-/** Upload c�t� serveur : le navigateur POSTe le fichier multipart/form-data
-  � Next.js, qui le transf�re vers R2 sans aucun CORS/CSP c�t� navigateur. */
+/** Upload coté serveur : le navigateur POSTe le fichier multipart/form-data
+  à Next.js, qui le transfère vers R2 sans aucun CORS/CSP côté navigateur. */
 export async function POST(req: Request) {
   try {
     const ip = clientIp(req);
@@ -29,7 +28,7 @@ export async function POST(req: Request) {
     });
     if (!rl.ok) {
       return NextResponse.json(
-        { error: "Trop de requ�tes. R�essaie plus tard." },
+        { error: "Trop de requêtes. Réessaie plus tard." },
         { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
       );
     }
@@ -40,7 +39,7 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json(
-        { error: "Connexion requise pour envoyer une vid�o." },
+        { error: "Connexion requise pour envoyer une vidéo." },
         { status: 401 },
       );
     }
@@ -58,13 +57,13 @@ export async function POST(req: Request) {
     const contentType = (file as File).type?.toLowerCase() || "video/mp4";
     if (!ALLOWED_VIDEO_TYPES.has(contentType)) {
       return NextResponse.json(
-        { error: "Type de vid�o non accept� (mp4, webm, mov, m4v, mpg)." },
+        { error: "Type de vidéo non accepté (mp4, webm, mov, m4v, mpg)." },
         { status: 400 },
       );
     }
     if (buf.length > MAX_BYTES) {
       return NextResponse.json(
-        { error: "Vid�o trop lourde (max 200 Mo)." },
+        { error: "Vidéo trop lourde (max 200 Mo)." },
         { status: 400 },
       );
     }
@@ -85,10 +84,12 @@ export async function POST(req: Request) {
     const publicUrl = `${getR2PublicBase()}/${key}`;
     return NextResponse.json({ ok: true, publicUrl });
   } catch (err) {
-    console.error("[videos/upload] erreur:", err instanceof Error ? err.message : err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[videos/upload] erreur:", msg);
     if (err instanceof Error && err.stack) console.error(err.stack);
+    // DEBUG : on remonte le vrai message au client pour diagnostiquer.
     return NextResponse.json(
-      { error: "Impossible de pr�parer l'upload." },
+      { error: `Impossible de préparer l'upload. [${msg}]` },
       { status: 500 },
     );
   }

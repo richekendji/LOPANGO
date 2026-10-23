@@ -84,10 +84,12 @@ export async function POST(req: Request) {
     const publicUrl = `${getR2PublicBase()}/${key}`;
     return NextResponse.json({ ok: true, publicUrl });
   } catch (err) {
-    console.error("[photos/upload] erreur:", err instanceof Error ? err.message : err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[photos/upload] erreur:", msg);
     if (err instanceof Error && err.stack) console.error(err.stack);
+    // DEBUG : on remonte le vrai message au client pour diagnostiquer.
     return NextResponse.json(
-      { error: "Impossible de préparer l'upload." },
+      { error: `Impossible de préparer l'upload. [${msg}]` },
       { status: 500 },
     );
   }

@@ -8,7 +8,13 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { networkInterfaces } from "node:os";
 
 function requireEnv(name: string): string {
-  const v = process.env[name]?.trim();
+  // Vercel peut stocker la valeur avec des guillemets ou espaces résiduels :
+  // on nettoie pour obtenir la clé « nue » attendue par R2 (ex. 32 chars).
+  let v = process.env[name] ?? "";
+  v = v.trim();
+  if ((v.startsWith("\"") && v.endsWith("\"")) || (v.startsWith("'") && v.endsWith("'"))) {
+    v = v.slice(1, -1).trim();
+  }
   if (!v) throw new Error(`Variable manquante: ${name}`);
   return v;
 }
